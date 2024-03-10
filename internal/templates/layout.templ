@@ -1,0 +1,57 @@
+package templates
+
+import "stravafy/internal/database"
+
+templ layout(user *database.User) {
+<!DOCTYPE html>
+<html>
+@head()
+<body>
+    @nav(user)
+    { children... }
+    @footer()
+</body>
+</html>
+}
+
+templ nav(user *database.User) {
+    <nav class="container-fluid" data-theme="dark">
+        <ul>
+            <li><strong>Stravafy</strong></li>
+        </ul>
+        <ul>
+                if user != nil {
+                    <li><a href="">Hallo { user.FirstName }</a></li>
+                    <li><a href="/auth/logout" role="button">Logout</a></li>
+                } else {
+                    <li><a href="/auth/login"><img src="/assets/btn_strava_connectwith_orange.svg" /></a></li>
+                }
+        </ul>
+    </nav>
+}
+
+templ footer() {
+    <footer class="container">
+        Created By jasperspahl
+    </footer>
+}
+
+templ head() {
+<head>
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <meta http-equiv="X-UA-Compatible" content="ie=edge"/>
+    <title>Stravafy</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <link
+        rel="stylesheet"
+        href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css"
+      />
+    <link
+        rel="stylesheet"
+        href="/assets/css/styles.css" />
+</head>
+}

@@ -1,0 +1,19 @@
+package templates
+
+import (
+    "fmt"
+    "net/http"
+	"stravafy/internal/database"
+)
+
+templ Error(code int, err string, user *database.User) {
+    @layout(user) {
+        <main class="container">
+            <hgroup>
+            <h1>Error { fmt.Sprint(code) }</h1>
+            <h3>{ http.StatusText(code) }</h3>
+            <p>{ err }</p>
+            </hgroup>
+        </main>
+    }
+}

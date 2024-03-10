@@ -1,0 +1,13 @@
+.hero {
+    background-image: url("https://images.unsplash.com/photo-1499438075715-fc23ef376ab9?q=80&w=1920&auto=format&fit=crop");
+    background-position: center;
+    background-size: cover;
+}
+
+.hero header {
+    padding: 5rem 0;
+}
+
+header hgroup :last-child {
+    color: var(--pico-h3-color);
+}

@@ -1,0 +1,21 @@
+package templates
+
+import "stravafy/internal/database"
+
+templ Index(user *database.User) {
+<!DOCTYPE html>
+<html>
+@head()
+<body>
+    <div class="hero" data-theme="dark">
+        @nav(user)
+        <header class="container">
+            <hgroup>
+            <h1>Stravafy</h1>
+            <p>Match your Spotify History to Strava</p>
+            </hgroup>
+        </header>
+    </div>
+</body>
+</html>
+}
