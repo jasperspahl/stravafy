@@ -46,3 +46,6 @@ SELECT session_id FROM session WHERE session_id = ? AND last_activity_time > dat
 -- name: DeleteSession :exec
 DELETE FROM session
 WHERE session_id = ?;
+
+-- name: UpdateSessionLastActivityTime :exec
+UPDATE session SET last_activity_time = datetime('now') WHERE session_id = ?;

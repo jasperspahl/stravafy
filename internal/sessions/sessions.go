@@ -31,7 +31,7 @@ var (
 
 type Session interface {
 	GetUserId(ctx context.Context) (int64, error)
-	GetUser(ctx context.Context) *database.User
+	GetUser(ctx context.Context) (database.User, error)
 	SetUserId(ctx context.Context, userID int64) error
 	Logout(ctx context.Context)
 }
@@ -76,19 +76,23 @@ func validSession(c *gin.Context, queries *database.Queries, sessionID string) (
 		}
 		return newSession(c, queries)
 	}
+	err = queries.UpdateSessionLastActivityTime(c, sessionID)
+	if err != nil {
+		return nil, err
+	}
 	return &session{
 		sessionID: sessionID,
 		queries:   queries,
 	}, nil
 }
 
-func (s *session) GetUser(ctx context.Context) *database.User {
+func (s *session) GetUser(ctx context.Context) (database.User, error) {
 	userID, err := s.GetUserId(ctx)
 	if err != nil {
-		return nil
+		return database.User{}, ErrNotLoggedIn
 	}
 	user, _ := s.queries.GetUserById(ctx, userID)
-	return &user
+	return user, nil
 }
 
 func (s *session) GetUserId(ctx context.Context) (int64, error) {
@@ -138,7 +142,7 @@ func Middleware(q *database.Queries) gin.HandlerFunc {
 
 		c.Next()
 
-		c.SetCookie(sessionCookie, s.sessionID, 3600*24, "/", strings.Split(c.Request.Host, ":")[0], false, true)
+		c.SetCookie(sessionCookie, s.sessionID, 3600, "/", strings.Split(c.Request.Host, ":")[0], false, true)
 
 	}
 }
