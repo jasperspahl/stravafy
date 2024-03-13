@@ -8,6 +8,24 @@ CREATE TABLE IF NOT EXISTS user
     profile_medium VARCHAR(255) NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS spotify_user_info
+(
+    user_id      INTEGER PRIMARY KEY NOT NULL,
+    spotify_id   VARCHAR(255)        NOT NULL,
+    display_name VARCHAR(255)        NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user (id)
+);
+
+CREATE TABLE IF NOT EXISTS spotify_user_images
+(
+    user_id INTEGER NOT NULL,
+    url VARCHAR(255) NOT NULL,
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    PRIMARY KEY (user_id, width, height),
+    FOREIGN KEY (user_id) REFERENCES user (id)
+);
+
 CREATE TABLE IF NOT EXISTS strava_access_token
 (
     user_id      INT           NOT NULL PRIMARY KEY,
@@ -40,6 +58,7 @@ CREATE TABLE IF NOT EXISTS spotify_access_token
 (
     user_id      INT           NOT NULL PRIMARY KEY,
     access_token VARCHAR(1000) NOT NULL,
+    token_type   VARCHAR(255)  NOT NULL,
     expires_at   INT           NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id)
 );

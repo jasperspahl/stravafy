@@ -7,11 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
 	"net/http"
-	"stravafy/internal/api"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	"stravafy/internal/sessions"
-	"stravafy/internal/templates"
 	"strings"
 )
 
@@ -36,27 +34,27 @@ type OauthCallback struct {
 func (s *Service) stravaCallback(c *gin.Context) {
 	errorString := c.Query("error")
 	if errorString != "" {
-		api.Error(c, http.StatusUnauthorized, ErrNotAuthorized)
+		_ = c.Error(ErrNotAuthorized)
 		return
 	}
 	var attr OauthCallback
 	conf := config.GetConfig()
 	err := c.Bind(&attr)
 	if err != nil {
-		api.Error(c, http.StatusBadRequest, err)
+		_ = c.Error(ErrBindingOauth2Callback)
 		return
 	}
 	if attr.State != conf.Strava.StateString {
-		api.Error(c, http.StatusBadRequest, errors.New("state not set correctly"))
+		_ = c.Error(ErrStateNotSetCorrectly)
 		return
 	}
 	if !strings.Contains(attr.Scope, "activity:write") || !strings.Contains(attr.Scope, "activity:read") {
-		api.Error(c, http.StatusUnauthorized, errors.New("missing activity:write or activity:read scope"))
+		_ = c.Error(ErrMissingRequiredScopes)
 		return
 	}
 	token, err := s.stravaOauthConfig.Exchange(c, attr.Code)
 	if err != nil {
-		c.Redirect(http.StatusSeeOther, "/")
+		_ = c.Error(ErrTokenExchangeFailed)
 		return
 	}
 	athlete := token.Extra("athlete").(map[string]interface{})
@@ -72,7 +70,7 @@ func (s *Service) stravaCallback(c *gin.Context) {
 				ProfileMedium: athlete["profile_medium"].(string),
 			})
 			if err != nil {
-				api.Error(c, http.StatusInternalServerError, err)
+				_ = c.Error(err)
 				return
 			}
 			err = s.queries.InsertStravaAccessToken(c, database.InsertStravaAccessTokenParams{
@@ -81,7 +79,7 @@ func (s *Service) stravaCallback(c *gin.Context) {
 				ExpiresAt:   token.Expiry.Unix(),
 			})
 			if err != nil {
-				api.Error(c, http.StatusInternalServerError, err)
+				_ = c.Error(err)
 				return
 			}
 			err = s.queries.InsertStravaRefreshToken(c, database.InsertStravaRefreshTokenParams{
@@ -89,11 +87,11 @@ func (s *Service) stravaCallback(c *gin.Context) {
 				RefreshToken: token.RefreshToken,
 			})
 			if err != nil {
-				api.Error(c, http.StatusInternalServerError, err)
+				_ = c.Error(err)
 				return
 			}
 		} else {
-			api.Error(c, http.StatusInternalServerError, err)
+			_ = c.Error(err)
 			return
 		}
 	} else {
@@ -103,7 +101,7 @@ func (s *Service) stravaCallback(c *gin.Context) {
 			ExpiresAt:   token.Expiry.Unix(),
 		})
 		if err != nil {
-			api.Error(c, http.StatusInternalServerError, err)
+			_ = c.Error(err)
 			return
 		}
 		err = s.queries.UpdateStravaRefreshToken(c, database.UpdateStravaRefreshTokenParams{
@@ -111,26 +109,19 @@ func (s *Service) stravaCallback(c *gin.Context) {
 			RefreshToken: token.RefreshToken,
 		})
 		if err != nil {
-			api.Error(c, http.StatusInternalServerError, err)
+			_ = c.Error(err)
 			return
 		}
 	}
 	session, err := sessions.GetSession(c)
 	if err != nil {
-		api.Error(c, http.StatusInternalServerError, err)
+		_ = c.Error(err)
 		return
 	}
 	err = session.SetUserId(c, userId)
 	if err != nil {
-		api.Error(c, http.StatusInternalServerError, err)
+		_ = c.Error(err)
 		return
 	}
-	c.HTML(http.StatusOK, "", templates.AfterStrava(&database.User{
-		StravaID:      stravaID,
-		FirstName:     athlete["firstname"].(string),
-		LastName:      athlete["lastname"].(string),
-		Profile:       athlete["profile"].(string),
-		ProfileMedium: athlete["profile_medium"].(string),
-	}))
-
+	c.Redirect(http.StatusSeeOther, "/")
 }

@@ -32,6 +32,7 @@ var (
 type Session interface {
 	GetUserId(ctx context.Context) (int64, error)
 	GetUser(ctx context.Context) (database.User, error)
+	GetSessionID() string
 	SetUserId(ctx context.Context, userID int64) error
 	Logout(ctx context.Context)
 }
@@ -107,6 +108,10 @@ func (s *session) GetUserId(ctx context.Context) (int64, error) {
 	return userID.Int64, nil
 }
 
+func (s *session) GetSessionID() string {
+	return s.sessionID
+}
+
 func (s *session) SetUserId(ctx context.Context, userId int64) error {
 	return s.queries.UpdateSessionUserId(ctx, database.UpdateSessionUserIdParams{
 		UserID:    sql.NullInt64{Int64: userId, Valid: true},
@@ -126,13 +131,13 @@ func Middleware(q *database.Queries) gin.HandlerFunc {
 		if err != nil || sessionID == "" {
 			s, err = newSession(c, q)
 			if err != nil {
-				c.HTML(http.StatusInternalServerError, "", templates.Error(http.StatusInternalServerError, err.Error(), nil))
+				c.HTML(http.StatusInternalServerError, "", templates.Error(http.StatusInternalServerError, err.Error(), false))
 				return
 			}
 		} else {
 			s, err = validSession(c, q, sessionID)
 			if err != nil {
-				c.HTML(http.StatusInternalServerError, "", templates.Error(http.StatusInternalServerError, err.Error(), nil))
+				c.HTML(http.StatusInternalServerError, "", templates.Error(http.StatusInternalServerError, err.Error(), false))
 				return
 			}
 		}

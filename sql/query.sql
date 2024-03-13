@@ -49,3 +49,30 @@ WHERE session_id = ?;
 
 -- name: UpdateSessionLastActivityTime :exec
 UPDATE session SET last_activity_time = datetime('now') WHERE session_id = ?;
+
+-- name: InsertSpotifyAccessToken :exec
+INSERT INTO spotify_access_token (user_id, access_token, token_type, expires_at) VALUES (?, ?, ?, ?);
+
+-- name: InsertSpotifyRefreshToken :exec
+INSERT INTO spotify_refresh_token (user_id, refresh_token) VALUES (?, ?);
+
+-- name: GetSpotifyAccessToken :one
+SELECT sat.user_id, sat.access_token, sat.token_type, sat.expires_at, srt.refresh_token FROM spotify_access_token sat
+JOIN main.spotify_refresh_token srt on sat.user_id = srt.user_id
+WHERE sat.user_id = ?;
+
+
+-- name: UpdateSpotifyAccessToken :exec
+UPDATE  spotify_access_token SET access_token = ?, expires_at = ? WHERE user_id = ?;
+
+-- name: UpdateSpotifyRefreshToken :exec
+UPDATE  spotify_refresh_token SET refresh_token = ? WHERE user_id = ?;
+
+-- name: GetSpotifyUserInfo :one
+SELECT * FROM spotify_user_info WHERE user_id = ?;
+
+-- name: InsertSpotifyUserInfo :exec
+INSERT INTO spotify_user_info (user_id, spotify_id, display_name) VALUES (?, ?, ?);
+
+-- name: InsertSpotifyUserImage :exec
+INSERT INTO spotify_user_images (user_id, url, width, height) VALUES (?, ?, ?, ?);

@@ -1,22 +1,21 @@
 package api
 
 import (
-	"context"
 	"github.com/gin-gonic/gin"
 	"stravafy/internal/sessions"
 	"stravafy/internal/templates"
 )
 
 func Error(c *gin.Context, code int, err error) {
-	session, err := sessions.GetSession(c)
-	if err != nil {
-		c.HTML(code, "", templates.Error(code, err.Error(), nil))
+	session, e := sessions.GetSession(c)
+	if e != nil {
+		c.HTML(code, "", templates.Error(code, err.Error(), true))
 		return
 	}
-	user, err := session.GetUser(context.Background())
-	if err != nil {
-		c.HTML(code, "", templates.Error(code, err.Error(), nil))
+	userid, e := session.GetUserId(c)
+	if e != nil {
+		c.HTML(code, "", templates.Error(code, err.Error(), false))
+		return
 	}
-	c.HTML(code, "", templates.Error(code, err.Error(), &user))
-
+	c.HTML(code, "", templates.Error(code, err.Error(), userid != 0))
 }

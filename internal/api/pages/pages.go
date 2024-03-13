@@ -1,9 +1,10 @@
 package pages
 
 import (
+	"database/sql"
+	"errors"
 	"github.com/gin-gonic/gin"
 	"net/http"
-	"stravafy/internal/api"
 	"stravafy/internal/database"
 	"stravafy/internal/sessions"
 	"stravafy/internal/templates"
@@ -24,20 +25,37 @@ func (s *Service) Mount(group *gin.RouterGroup) {
 func (s *Service) index(c *gin.Context) {
 	session, err := sessions.GetSession(c)
 	if err != nil {
-		api.Error(c, http.StatusInternalServerError, err)
+		_ = c.Error(err)
 		return
 	}
 
 	userID, err := session.GetUserId(c)
-	if err == nil {
-		user, err := s.q.GetUserById(c, userID)
-		if err != nil {
-			api.Error(c, http.StatusInternalServerError, err)
-			return
-		}
-		c.HTML(http.StatusOK, "", templates.Index(&user))
+	if err != nil {
+		c.HTML(http.StatusOK, "", templates.Index())
 		return
 	}
-	c.HTML(http.StatusOK, "", templates.Index(nil))
+	user, err := s.q.GetUserById(c, userID)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	props := templates.IndexAuthenticatedProps{
+		StravaID:      user.StravaID,
+		FirstName:     user.FirstName,
+		LastName:      user.LastName,
+		StravaProfile: user.Profile,
+	}
+	spotifyUserInfo, err := s.q.GetSpotifyUserInfo(c, userID)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		_ = c.Error(err)
+	}
+	if errors.Is(err, sql.ErrNoRows) {
+		props.SpotifyConnected = false
+	} else {
+		props.SpotifyConnected = true
+		props.SpotifyUserName = spotifyUserInfo.DisplayName
+		props.SpotifyID = spotifyUserInfo.SpotifyID
+	}
+	c.HTML(http.StatusOK, "", templates.IndexAuthenticated(props))
 
 }

@@ -1,21 +1,63 @@
 package templates
 
-import "stravafy/internal/database"
+import "fmt"
 
-templ Index(user *database.User) {
+templ Index() {
 <!DOCTYPE html>
 <html>
 @head()
 <body>
-    <div class="hero" data-theme="dark">
-        @nav(user)
+    <section class="hero" data-theme="dark">
+        @nav(false)
         <header class="container">
             <hgroup class="container">
             <h1>Stravafy</h1>
             <p>Match your Spotify History to Strava</p>
             </hgroup>
         </header>
-    </div>
+    </section>
+    <section class="container">
+        <h1>How it works</h1>
+    </section>
 </body>
 </html>
+}
+
+type IndexAuthenticatedProps struct {
+    StravaID         int64
+    FirstName        string
+    LastName         string
+    StravaProfile    string
+    SpotifyConnected bool
+    SpotifyUserName  string
+    SpotifyID        string
+}
+
+templ IndexAuthenticated(props IndexAuthenticatedProps) {
+    @layout(true) {
+        <main class="container">
+            <article>
+                <header>
+                    <h1>Stravafy Overview</h1>
+                </header>
+                <div class="flex">
+                    <div><img src={props.StravaProfile} width="64" height="64" alt="" style="border-radius: 50%"/></div>
+                    <div>
+                        <p>
+                            Welcome, <strong>{props.FirstName}</strong><br/>
+                            <a href={ templ.SafeURL(fmt.Sprintf("https://www.strava.com/athletes/%d", props.StravaID)) }>Your Strava</a>
+                        </p>
+                        if props.SpotifyConnected {
+                            <p>
+                                Logged in to Spotify as <strong>{props.SpotifyUserName}</strong><br/>
+                                <a href={ templ.SafeURL(fmt.Sprintf("https://open.spotify.com/user/%s", props.SpotifyID)) }>Your Spotify</a>
+                            </p>
+                        } else {
+                            <p><a href="/auth/login/spotify" role="button">Login to Spotify</a></p>
+                        }
+                    </div>
+                </div>
+            </article>
+        </main>
+    }
 }

@@ -14,6 +14,7 @@ import (
 var schema string
 
 func main() {
+	log.SetFlags(log.LstdFlags)
 	log.Print("Starting ...")
 	configPath, isSet := os.LookupEnv("STRAVAFY_CONFIG_PATH")
 	if !isSet {

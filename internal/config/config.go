@@ -25,6 +25,7 @@ type SpotifyConfig struct {
 	ClientID       string
 	ClientSecret   string
 	UpdateInterval int
+	ShowDialog     bool
 }
 
 type ListenConfig struct {
@@ -60,6 +61,7 @@ func DefaultConfig() *Config {
 			ClientID:       "<client-id>",
 			ClientSecret:   "<client-secret>",
 			UpdateInterval: 60,
+			ShowDialog:     false,
 		},
 		Database: DatabaseConfig{
 			Source: "file:stravafy.db?mode=rwc",

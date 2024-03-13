@@ -1,27 +1,24 @@
 package templates
 
-import "stravafy/internal/database"
-
-templ layout(user *database.User) {
+templ layout(loggedIn bool) {
 <!DOCTYPE html>
 <html>
 @head()
 <body>
-    @nav(user)
+    @nav(loggedIn)
     { children... }
     @footer()
 </body>
 </html>
 }
 
-templ nav(user *database.User) {
+templ nav(loggedIn bool) {
     <nav class="container-fluid" data-theme="dark">
         <ul>
             <li><strong>Stravafy</strong></li>
         </ul>
         <ul>
-                if user != nil {
-                    <li><a href="">Hallo { user.FirstName }</a></li>
+                if loggedIn {
                     <li><a href="/auth/logout" role="button">Logout</a></li>
                 } else {
                     <li><a href="/auth/login"><img src="/assets/btn_strava_connectwith_orange.svg" /></a></li>

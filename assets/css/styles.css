@@ -11,3 +11,8 @@
 header hgroup :last-child {
     color: var(--pico-h3-color);
 }
+
+.flex {
+    display: flex;
+    gap: var(--pico-spacing);
+}
