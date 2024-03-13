@@ -76,3 +76,6 @@ INSERT INTO spotify_user_info (user_id, spotify_id, display_name) VALUES (?, ?, 
 
 -- name: InsertSpotifyUserImage :exec
 INSERT INTO spotify_user_images (user_id, url, width, height) VALUES (?, ?, ?, ?);
+
+-- name: GetUserIdsWithActiveSpotify :many
+SELECT user_id from spotify_user_info;

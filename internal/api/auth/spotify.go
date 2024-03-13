@@ -12,6 +12,7 @@ import (
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	"stravafy/internal/sessions"
+	"stravafy/internal/worker"
 	"strconv"
 	"strings"
 )
@@ -159,5 +160,6 @@ func (s *Service) spotifyCallback(c *gin.Context) {
 			return
 		}
 	}
+	worker.LaunchSyncForUser(userId)
 	c.Redirect(http.StatusSeeOther, "/")
 }

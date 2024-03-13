@@ -1,9 +1,11 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"log"
 	"net/http"
 	"stravafy/internal/api"
 	"stravafy/internal/api/auth"
@@ -16,6 +18,7 @@ import (
 
 var (
 	router *gin.Engine
+	srv    *http.Server
 )
 
 func Init(queries *database.Queries) {
@@ -29,11 +32,26 @@ func Init(queries *database.Queries) {
 	router.Static("/assets", "./assets")
 	pagesService.Mount(router.Group("/"))
 	authService.Mount(router.Group("/auth"))
+
+	conf := config.GetConfig()
+
+	srv = &http.Server{
+		Addr:    fmt.Sprintf("%s:%d", conf.Listen.Host, conf.Listen.Port),
+		Handler: router,
+	}
 }
 
 func Run() error {
-	conf := config.GetConfig()
-	return router.Run(fmt.Sprintf("%s:%d", conf.Listen.Host, conf.Listen.Port))
+	log.Println("starting server ...")
+	if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		return err
+	}
+	return nil
+}
+
+func Shutdown(ctx context.Context) error {
+	log.Println("shutting down server")
+	return srv.Shutdown(ctx)
 }
 
 func ErrorHandler() gin.HandlerFunc {

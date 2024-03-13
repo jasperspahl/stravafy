@@ -5,9 +5,13 @@ import (
 	_ "embed"
 	"log"
 	"os"
+	"os/signal"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	"stravafy/internal/server"
+	"stravafy/internal/worker"
+	"syscall"
+	"time"
 )
 
 //go:embed sql/schema.sql
@@ -45,8 +49,25 @@ func main() {
 	//queries := database.New(db)
 	server.Init(queries)
 
-	err = server.Run()
-	if err != nil {
-		return
+	go func() {
+		if err := server.Run(); err != nil {
+			log.Printf("an error accoured: %v\n", err)
+		}
+	}()
+
+	go worker.Start()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+	<-quit
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	if err := server.Shutdown(ctx); err != nil {
+		log.Printf("an error accoured while shuting down the server: %v", err)
 	}
+
+	worker.Shutdown()
+
 }
