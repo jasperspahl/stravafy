@@ -35,7 +35,7 @@ func Init(queries *database.Queries) {
 	router.HTMLRender = renderer.Default
 	router.Use(ErrorHandler())
 	router.Use(sessions.Middleware(queries))
-	router.StaticFS("/assets", http.FS(assets))
+	router.StaticFS("/static", http.FS(assets))
 	pagesService.Mount(router.Group("/"))
 	authService.Mount(router.Group("/auth"))
 	webhookService.Mount(router.Group("/callback"))

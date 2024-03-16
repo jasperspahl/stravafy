@@ -21,7 +21,7 @@ templ nav(loggedIn bool) {
                 if loggedIn {
                     <li><a href="/auth/logout" role="button">Logout</a></li>
                 } else {
-                    <li><a href="/auth/login"><img src="/assets/btn_strava_connectwith_orange.svg" /></a></li>
+                    <li><a href="/auth/login"><img src="/static/assets/btn_strava_connectwith_orange.svg" /></a></li>
                 }
         </ul>
     </nav>
@@ -50,6 +50,6 @@ templ head() {
       />
     <link
         rel="stylesheet"
-        href="/assets/css/styles.css" />
+        href="/static/assets/css/styles.css" />
 </head>
 }

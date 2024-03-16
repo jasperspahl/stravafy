@@ -1,6 +1,7 @@
 FROM golang:1.22-bookworm as build
 RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
+RUN apt update && apt install -y ca-certificates
 WORKDIR /app
 COPY go.mod go.sum ./
 RUN go mod download
@@ -12,7 +13,6 @@ COPY internal ./internal
 
 RUN sqlc generate
 RUN templ generate
-RUN apt update && apt install -y ca-certificates
 RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a --installsuffix cgo -v -tags netgo -ldflags '-extldflags "-static"' -o /app/stravafy .
 
 FROM scratch as final
