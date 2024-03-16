@@ -141,7 +141,6 @@ func Middleware(q *database.Queries) gin.HandlerFunc {
 				return
 			}
 		}
-		log.Print(s.GetUser(c))
 
 		c.Set(sessionKey, s)
 

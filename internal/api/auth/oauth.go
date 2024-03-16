@@ -1,10 +1,8 @@
 package auth
 
 import (
-	"fmt"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/endpoints"
 	"net/http"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
@@ -20,18 +18,11 @@ type Service struct {
 }
 
 func New(queries *database.Queries) *Service {
-	conf := config.GetConfig()
-	return &Service{queries, oauth2.Config{
-		ClientID:     fmt.Sprintf("%d", conf.Strava.ClientId),
-		ClientSecret: conf.Strava.ClientSecret,
-		Scopes:       []string{"read,activity:read_all,activity:write"},
-		Endpoint:     endpoints.Strava,
-	}, oauth2.Config{
-		ClientID:     conf.Spotify.ClientID,
-		ClientSecret: conf.Spotify.ClientSecret,
-		Scopes:       []string{"user-read-currently-playing", "user-read-playback-state"},
-		Endpoint:     endpoints.Spotify,
-	}}
+	return &Service{
+		queries:            queries,
+		stravaOauthConfig:  config.GetStravaOauthConfig(),
+		spotifyOauthConfig: config.GetSpotifyOauthConfig(),
+	}
 }
 
 func (s *Service) Mount(group *gin.RouterGroup) {

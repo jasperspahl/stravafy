@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"github.com/fsnotify/fsnotify"
 	"github.com/spf13/viper"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/endpoints"
 	"log"
 	"os"
 	"strings"
@@ -107,6 +109,24 @@ func Setup(configPath string) error {
 
 func GetConfig() *Config {
 	return conf
+}
+
+func GetSpotifyOauthConfig() oauth2.Config {
+	return oauth2.Config{
+		ClientID:     conf.Spotify.ClientID,
+		ClientSecret: conf.Spotify.ClientSecret,
+		Scopes:       []string{"user-read-currently-playing", "user-read-playback-state"},
+		Endpoint:     endpoints.Spotify,
+	}
+}
+
+func GetStravaOauthConfig() oauth2.Config {
+	return oauth2.Config{
+		ClientID:     fmt.Sprintf("%d", conf.Strava.ClientId),
+		ClientSecret: conf.Strava.ClientSecret,
+		Scopes:       []string{"read,activity:read_all,activity:write"},
+		Endpoint:     endpoints.Strava,
+	}
 }
 
 func handleConfigChange(e fsnotify.Event) {

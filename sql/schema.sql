@@ -71,3 +71,39 @@ CREATE TABLE IF NOT EXISTS spotify_refresh_token
     refresh_token VARCHAR(1000) NOT NULL,
     FOREIGN KEY (user_id) REFERENCES user (id)
 );
+
+CREATE TABLE IF NOT EXISTS spotify_user_history
+(
+    id         INTEGER   PRIMARY KEY AUTOINCREMENT,
+    user_id    INT       NOT NULL,
+    timestamp  TIMESTAMP NOT NULL,
+    is_playing BOOLEAN   NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS spotify_user_history_context
+(
+    history_id   INTEGER      NOT NULL PRIMARY KEY,
+    type         VARCHAR(10)  NOT NULL,
+    href         TEXT         NOT NULL,
+    external_url TEXT         NOT NULL,
+    uri          VARCHAR(255) NOT NULL,
+    FOREIGN KEY (history_id) REFERENCES spotify_user_history (id)
+);
+
+CREATE TABLE IF NOT EXISTS spotify_user_history_item
+(
+    history_id               INTEGER      NOT NULL PRIMARY KEY,
+    type                     VARCHAR(10)  NOT NULL,
+    href                     TEXT         NOT NULL,
+    external_url             TEXT         NOT NULL,
+    uri                      VARCHAR(255) NOT NULL,
+    name                     VARCHAR(255) NOT NULL,
+    artists                  TEXT,
+    album                    TEXT,
+    album_uri                VARCHAR(255),
+    episode_description      TEXT,
+    episode_show_name        TEXT,
+    episode_show_description TEXT,
+    episode_show_uri         VARCHAR(255),
+    FOREIGN KEY (history_id) REFERENCES spotify_user_history (id)
+);
