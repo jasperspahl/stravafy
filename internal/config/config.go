@@ -21,6 +21,7 @@ type StravaConfig struct {
 	ClientSecret   string
 	ApprovalPrompt string
 	StateString    string
+	WebhookHost    string
 }
 
 type SpotifyConfig struct {
@@ -50,7 +51,7 @@ var onConfigChangeFuncs []OnConfigChangeFunc
 func DefaultConfig() *Config {
 	return &Config{
 		Listen: ListenConfig{
-			Host: "localhost",
+			Host: "0.0.0.0",
 			Port: 80,
 		},
 		Strava: StravaConfig{
@@ -58,6 +59,7 @@ func DefaultConfig() *Config {
 			ClientSecret:   "<client-secret>",
 			ApprovalPrompt: "auto",
 			StateString:    "stravafy",
+			WebhookHost:    "https://your.service.host",
 		},
 		Spotify: SpotifyConfig{
 			ClientID:       "<client-id>",

@@ -9,8 +9,6 @@ import (
 	"stravafy/internal/sessions"
 )
 
-type Provider int
-
 type Service struct {
 	queries            *database.Queries
 	stravaOauthConfig  oauth2.Config

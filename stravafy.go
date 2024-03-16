@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"os/signal"
+	"stravafy/internal/api/webhook"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	"stravafy/internal/server"
@@ -56,6 +57,8 @@ func main() {
 	}()
 
 	go worker.Start()
+
+	webhook.RegisterWebhook()
 
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)

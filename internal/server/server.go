@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"embed"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
@@ -10,6 +11,7 @@ import (
 	"stravafy/internal/api"
 	"stravafy/internal/api/auth"
 	"stravafy/internal/api/pages"
+	"stravafy/internal/api/webhook"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	"stravafy/internal/renderer"
@@ -21,17 +23,22 @@ var (
 	srv    *http.Server
 )
 
+// go:embed assets/*
+var assets embed.FS
+
 func Init(queries *database.Queries) {
 	pagesService := pages.New(queries)
 	authService := auth.New(queries)
+	webhookService := webhook.New(queries)
 
 	router = gin.Default()
 	router.HTMLRender = renderer.Default
 	router.Use(ErrorHandler())
 	router.Use(sessions.Middleware(queries))
-	router.Static("/assets", "./assets")
+	router.StaticFS("/assets", http.FS(assets))
 	pagesService.Mount(router.Group("/"))
 	authService.Mount(router.Group("/auth"))
+	webhookService.Mount(router.Group("/callback"))
 
 	conf := config.GetConfig()
 

@@ -34,3 +34,4 @@ stravafy.db
 tmp/
 *_templ.go
 worker.log
+docker-data/
