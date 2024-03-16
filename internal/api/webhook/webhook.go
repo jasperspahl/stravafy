@@ -34,8 +34,8 @@ func New(queries *database.Queries) *Service {
 }
 
 func (s *Service) Mount(group *gin.RouterGroup) {
-	group.POST("/", s.webhookCallback)
-	group.GET("/", s.webhookValidation)
+	group.POST("", s.webhookCallback)
+	group.GET("", s.webhookValidation)
 }
 
 type SubscriptionPayload struct {
