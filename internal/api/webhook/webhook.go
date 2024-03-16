@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -55,6 +56,15 @@ func RegisterWebhook() {
 		logger.Printf("[ERROR]: error while subscribing: %v", err)
 		return
 	}
+	logger.Printf("[INFO]: StatusCode %d: %s", resp.StatusCode, resp.Status)
+	if resp.StatusCode != http.StatusOK {
+		bytes, err := io.ReadAll(resp.Body)
+		if err != nil {
+			logger.Fatalf("[FATAL]: could not read body: %v", err)
+		}
+		logger.Printf("[ERROR]: could not register webhook: %s", string(bytes))
+		return
+	}
 	var payload SubscriptionPayload
 	decoder := json.NewDecoder(resp.Body)
 	err = decoder.Decode(&payload)
@@ -92,11 +102,15 @@ type Validation struct {
 }
 
 func (s *Service) webhookValidation(c *gin.Context) {
+	logger.Printf("[INFO]: reciving validation request")
 	var validation Validation
 	err := c.Bind(&validation)
 	if err != nil {
 		logger.Printf("[ERROR]: could not bind validation args: %v", err)
+		c.Status(http.StatusForbidden)
+		return
 	}
+	logger.Printf("[INFO]: %v", validation)
 	if validation.Mode != "subscribe" {
 		logger.Printf("[ERROR]: unexpected validation mode: %s", validation.Mode)
 		c.Status(http.StatusForbidden)

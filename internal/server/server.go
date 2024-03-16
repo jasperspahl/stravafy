@@ -23,7 +23,7 @@ var (
 	srv    *http.Server
 )
 
-// go:embed assets/*
+//go:embed assets/*
 var assets embed.FS
 
 func Init(queries *database.Queries) {
