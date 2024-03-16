@@ -12,7 +12,7 @@ COPY internal ./internal
 
 RUN sqlc generate
 RUN templ generate
-RUN CGO_ENABLED=0 GOOS=linux go build -o /stravafy .
+RUN CGO_ENABLED=0 GOOS=linux go build -o /app/stravafy .
 
 FROM alpine:latest as final
 WORKDIR /app
