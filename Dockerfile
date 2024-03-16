@@ -12,13 +12,18 @@ COPY internal ./internal
 
 RUN sqlc generate
 RUN templ generate
-RUN CGO_ENABLED=1 GOOS=linux go build -o /app/stravafy .
+RUN apt update && apt install -y ca-certificates
+RUN CGO_ENABLED=1 GOOS=linux GOARCH=amd64 go build -a --installsuffix cgo -v -tags netgo -ldflags '-extldflags "-static"' -o /app/stravafy .
 
-FROM debian:bookworm as final
+FROM scratch as final
 WORKDIR /app
+
+COPY --from=build \
+    /etc/ssl/certs/ca-certificates.crt \
+    /etc/ssl/certs/ca-certificates.crt
+
 COPY --from=build /app/stravafy /bin/stravafy
 
-RUN update-ca-certificates -v
 ENV GIN_MODE=release
 
 EXPOSE 80
