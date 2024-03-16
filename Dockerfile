@@ -18,6 +18,7 @@ FROM debian:bookworm as final
 WORKDIR /app
 COPY --from=build /app/stravafy /bin/stravafy
 
+RUN update-ca-certificates -v
 ENV GIN_MODE=release
 
 EXPOSE 80
