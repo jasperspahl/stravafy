@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine as build
+FROM golang:1.22-bookworm as build
 RUN go install github.com/a-h/templ/cmd/templ@latest
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 WORKDIR /app
@@ -12,10 +12,9 @@ COPY internal ./internal
 
 RUN sqlc generate
 RUN templ generate
-ENV CGO_ENABLED=1
-RUN GOOS=linux go build -o /app/stravafy .
+RUN CGO_ENABLED=1 GOOS=linux go build -o /app/stravafy .
 
-FROM alpine:latest as final
+FROM debian:bookworm as final
 WORKDIR /app
 COPY --from=build /app/stravafy /bin/stravafy
 
