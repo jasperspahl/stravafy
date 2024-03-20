@@ -33,5 +33,5 @@ internal/database/query.sql.go
 stravafy.db
 tmp/
 *_templ.go
-worker.log
+*.log
 docker-data/

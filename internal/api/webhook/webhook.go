@@ -11,6 +11,7 @@ import (
 	"os"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
+	"stravafy/internal/worker"
 )
 
 var logger *log.Logger
@@ -57,7 +58,7 @@ func RegisterWebhook() {
 		return
 	}
 	logger.Printf("[INFO]: StatusCode %d: %s", resp.StatusCode, resp.Status)
-	if resp.StatusCode != http.StatusOK {
+	if resp.StatusCode > 299 {
 		bytes, err := io.ReadAll(resp.Body)
 		if err != nil {
 			logger.Fatalf("[FATAL]: could not read body: %v", err)
@@ -75,24 +76,14 @@ func RegisterWebhook() {
 	logger.Printf("[INFO]: subscribed with id: %d", payload.ID)
 }
 
-type Callback struct {
-	ObjectType     string            `json:"object_type"`
-	ObjectId       int64             `json:"object_id"`
-	AspectType     string            `json:"aspect_type"`
-	Updates        map[string]string `json:"updates"`
-	OwnerId        int64             `json:"owner_id"`
-	SubscriptionId int64             `json:"subscription_id"`
-	EventTime      int64             `json:"event_time"`
-}
-
 func (s *Service) webhookCallback(c *gin.Context) {
-	var args Callback
+	var args worker.Callback
 	err := c.Bind(&args)
 	if err != nil {
 		logger.Printf("[ERROR]: could not bind callback args: %v", err)
 	}
-	logger.Printf("[INFO]: %v", args)
-	// TODO: handle the logic
+	worker.HandleStravaEvent(args)
+	c.Status(http.StatusNoContent)
 }
 
 type Validation struct {
