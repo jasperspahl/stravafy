@@ -30,24 +30,24 @@ func main() {
 		log.Fatalf("Upsi daisy config not working: %v", err)
 	}
 
-	db, err := database.NewSQLite()
-	if err != nil {
-		log.Fatalf("nono database: %v", err)
-	}
-	_, err = db.DB.ExecContext(context.Background(), schema)
-	if err != nil {
-		log.Fatalf("nono database: %v", err)
-	}
-	queries := database.New(db.DB)
-	//db, err := database.NewDebugDB()
+	//db, err := database.NewSQLite()
 	//if err != nil {
 	//	log.Fatalf("nono database: %v", err)
 	//}
-	//_, err = db.ExecContext(context.Background(), schema)
+	//_, err = db.DB.ExecContext(context.Background(), schema)
 	//if err != nil {
-	//	log.Fatalf("som wrong wis se migration: %v", err)
+	//	log.Fatalf("nono database: %v", err)
 	//}
-	//queries := database.New(db)
+	//queries := database.New(db.DB)
+	db, err := database.NewDebugDB()
+	if err != nil {
+		log.Fatalf("nono database: %v", err)
+	}
+	_, err = db.ExecContext(context.Background(), schema)
+	if err != nil {
+		log.Fatalf("som wrong wis se migration: %v", err)
+	}
+	queries := database.New(db)
 	server.Init(queries)
 
 	go func() {

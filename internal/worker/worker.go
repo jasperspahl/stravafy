@@ -177,7 +177,7 @@ func insertPlayingState(id int64, q *database.Queries, playerState PlayerState, 
 	infof(id, "inserting new player state")
 	histId, err := q.InsertHistory(context.Background(), database.InsertHistoryParams{
 		UserID:    id,
-		Timestamp: time.UnixMilli(playerState.Timestamp),
+		Timestamp: time.UnixMilli(playerState.Timestamp).UTC(),
 		IsPlaying: true,
 	})
 	if err != nil {
@@ -251,7 +251,7 @@ func handlePaused(id int64, q *database.Queries) error {
 	if errors.Is(err, sql.ErrNoRows) || lastHistEntry.IsPlaying {
 		_, err := q.InsertHistory(context.Background(), database.InsertHistoryParams{
 			UserID:    id,
-			Timestamp: time.Now(),
+			Timestamp: time.Now().UTC(),
 			IsPlaying: false,
 		})
 		return err

@@ -124,3 +124,30 @@ FROM spotify_user_history
 WHERE user_id = ?
 ORDER BY timestamp DESC
 LIMIT 1;
+
+-- name: GetHistoryEntriesBetween :many
+SELECT id,
+       timestamp,
+       is_playing,
+       ctx.type ctx_type,
+       ctx.href ctx_href,
+       ctx.external_url ctx_external_url,
+       ctx.uri ctx_uri,
+       item.type item_type,
+       item.href item_href,
+       item.external_url item_external_url,
+       item.uri item_uri,
+       item.name,
+       item.artists,
+       item.album,
+       item.album_uri,
+       item.episode_description,
+       item.episode_show_name,
+       item.episode_show_description,
+       item.episode_show_uri
+FROM spotify_user_history
+         JOIN main.spotify_user_history_context ctx on spotify_user_history.id = ctx.history_id
+         JOIN main.spotify_user_history_item item on spotify_user_history.id = item.history_id
+WHERE
+user_id = ? AND timestamp > ? AND timestamp < ?
+ORDER BY timestamp;
