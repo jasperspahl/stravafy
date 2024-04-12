@@ -149,7 +149,7 @@ type MetaActivity struct {
 type DetailedActivity struct {
 	ID                   int64         `json:"id"`
 	ExternalID           string        `json:"external_id"`
-	UploadID             string        `json:"upload_id"`
+	UploadID             int64         `json:"upload_id"`
 	Athlete              MetaAthlete   `json:"athlete"`
 	Name                 string        `json:"name"`
 	Distance             float64       `json:"distance"`
