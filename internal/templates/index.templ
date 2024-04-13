@@ -17,7 +17,21 @@ templ Index() {
         </header>
     </section>
     <section class="container">
-        <h1>How it works</h1>
+		<article>
+			<header class="pico-background-red-500">!!! IMPORTANT !!!</header>
+			<p>Stravafy is still very much in development! It is not yet ready for public use. Please check back later. Stravafy currently saves your complete Spotify listening history to a database. Feel free to checkout the github repo to fully understand what happens.</p>
+			<a href="https://github.com/jasperspahl/stravafy">Github: jasperspahl/stravafy</a>
+		</article>
+		<h1>How it works</h1>
+		<p>Stravafy is a web application that connects your Spotify and Strava accounts.</p> 
+		<p>After you log in with your Strava and Spotify accounts, Stravafy will save your current Spotify playing state to it's database.</p>
+		<p>When ever you upload a new activity to Strava, Stravafy will check if you were listening to music and add the playlist, playlist author and a link to the playlist you were listening to, to your activity's description</p>
+		<p>This will look something like this:</p>
+		<pre><code>
+Playlist: Corrupted Blood
+By: HandOfBlood
+https://open.spotify.com/playlist/6WlSmKm4leMtyyhqqaDKAb
+		</code></pre>
     </section>
 </body>
 </html>
