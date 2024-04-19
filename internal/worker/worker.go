@@ -84,13 +84,11 @@ func worker(id int64, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-ticker:
-			logger.Printf("worker %d [INFO]: updating player state", id)
 			resp, err := client.Get("https://api.spotify.com/v1/me/player?additional_types=track,episode")
 			if err != nil {
 				errorf(id, "%v", err)
 				continue
 			}
-			infof(id, "[HTTP] GET /me/player %d", resp.StatusCode)
 			switch resp.StatusCode {
 			case http.StatusNoContent:
 				err := handlePaused(id, queries)
@@ -159,7 +157,6 @@ func handlePlaying(id int64, q *database.Queries, resp *http.Response) error {
 }
 
 func hasChanged(id int64, lastEntry database.GetLastHistoryEntryCompleteRow, state PlayerState, item ItemObject) bool {
-	infof(id, "looking for changes")
 	if lastEntry.IsPlaying != state.IsPlaying {
 		return true
 	}
@@ -169,7 +166,6 @@ func hasChanged(id int64, lastEntry database.GetLastHistoryEntryCompleteRow, sta
 	if lastEntry.ItemUri != item.Uri {
 		return true
 	}
-	infof(id, "no changes found")
 	return false
 }
 
@@ -243,7 +239,6 @@ func insertPlayingState(id int64, q *database.Queries, playerState PlayerState, 
 }
 
 func handlePaused(id int64, q *database.Queries) error {
-	infof(id, "currently not playing")
 	lastHistEntry, err := q.GetLastHistoryEntryForUser(context.Background(), id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
@@ -254,7 +249,10 @@ func handlePaused(id int64, q *database.Queries) error {
 			Timestamp: time.Now().UTC(),
 			IsPlaying: false,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		infof(id, "[spotify] inserted paused state")
 	}
 	return nil
 }
