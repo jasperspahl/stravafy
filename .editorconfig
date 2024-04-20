@@ -1,3 +1,7 @@
 [*.go]
 indent_size = 4
 indent_style = tab
+
+[*.templ]
+indent_size = 4
+indent_style = tab

@@ -107,3 +107,13 @@ CREATE TABLE IF NOT EXISTS spotify_user_history_item
     episode_show_uri         VARCHAR(255),
     FOREIGN KEY (history_id) REFERENCES spotify_user_history (id)
 );
+
+CREATE TABLE IF NOT EXISTS user_config 
+(
+    user_id INTEGER NOT NULL,
+    type INTEGER NOT NULL,
+    enabled INTEGER NOT NULL,
+    template TEXT NOT NULL,
+    FOREIGN KEY (user_id) REFERENCES user (id),
+    PRIMARY KEY (user_id, type)
+);
