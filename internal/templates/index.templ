@@ -2,6 +2,7 @@ package templates
 
 import (
 	"fmt"
+	"strconv"
 	"stravafy/internal/manager/config"
 )
 
@@ -22,43 +23,51 @@ templ Index() {
 			<section class="container">
 				<article>
 					<header class="pico-background-red-500">!!! IMPORTANT !!!</header>
-					<p>Stravafy is still very much in development! It is not yet ready for public use. Please check back later. Stravafy currently saves your complete Spotify listening history to a database. Feel free to checkout the github repo to fully understand what happens.</p>
+					<p>Stravafy is still very much in development! It is not yet ready for public use. Please check back later. Stravafy currently saves your complete Spotify listening history to a database. Feel free to check out the GitHub repo to fully understand what happens.</p>
 					<a href="https://github.com/jasperspahl/stravafy">Github: jasperspahl/stravafy</a>
 				</article>
 				<h1>How it works</h1>
 				<p>Stravafy is a web application that connects your Spotify and Strava accounts.</p>
-				<p>After you log in with your Strava and Spotify accounts, Stravafy will save your current Spotify playing state to it's database.</p>
+				<p>After you log in with your Strava and Spotify accounts, Stravafy will save your current Spotify playing state to its database.</p>
 				<p>When ever you upload a new activity to Strava, Stravafy will check if you were listening to music and add the playlist, playlist author and a link to the playlist you were listening to, to your activity's description</p>
 				<p>This will look something like this:</p>
-				<pre><code>Playlist: Corrupted Blood<br/>By: HandOfBlood<br/>https://open.spotify.com/playlist/6WlSmKm4leMtyyhqqaDKAb</code></pre>
+				<pre><code>Playlist: Corrupted Blood<br/>By: HandOfBlood</code></pre>
 			</section>
 		</body>
 	</html>
 }
 
-templ ConfigCard(name string, example string, variables map[string]string, config config.Config) {
-	<article>
+templ ConfigCard(configType config.Type, config config.Config) {
+	<article id={fmt.Sprintf("%s-config", configType.String())}>
 		<header>
-			{ name }
+			{ configType.String() }
 			<input
 				name="enabled"
 				type="checkbox"
 				role="switch"
 				if config.Enabled {
 					checked
+					hx-put="/htmx/config/disable"
 				}
+				else {
+					hx-put="/htmx/config/enable"
+				}
+				hx-include={fmt.Sprintf("#%s-config [name='type']",configType.String())}
+				hx-target={fmt.Sprintf("#%s-config", configType.String())}
+				hx-swap="outerHTML"
 			/>
 		</header>
 		<form>
+			<input type="hidden" value={ strconv.Itoa(int(configType)) } name="type"/>
 			<label for="template">
 				<details>
 					<summary>Template</summary>
 					<p>The Templates use golang's text templating.</p>
 					<p>Example:</p>
-					<pre><code>{ example }</code></pre>
+					<pre><code>{ configType.DefaultConfig().Template }</code></pre>
 					<p>You have the following variables available:</p>
 					<dl>
-						for key, value := range variables {
+						for key, value := range configType.Help() {
 							<dt><b>{ key }</b></dt>
 							<dd>{ value }</dd>
 						}
@@ -67,12 +76,16 @@ templ ConfigCard(name string, example string, variables map[string]string, confi
 			</label>
 			<textarea
 				id="template"
-				name="podcast-template"
+				name="template"
 				cols="30"
 				rows="5"
 				if !config.Enabled {
 					disabled
+				} else {
+					hx-put="/htmx/config"
 				}
+				hx-target={fmt.Sprintf("#%s-config", configType.String())}
+				hx-swap="outerHTML"
 			>{ config.Template }</textarea>
 		</form>
 		<footer><pre><code>{ config.Preview }</code></pre></footer>
@@ -121,8 +134,8 @@ templ IndexAuthenticated(props IndexAuthenticatedProps, podcastConfig, playlistC
 						Configure the templates that get used when precessing you activities
 					</p>
 				</hgroup>
-				@ConfigCard("Podcast", config.DefaultConfig[config.Podcast].Template, config.PodcastVariables, podcastConfig)
-				@ConfigCard("Playlist", config.DefaultConfig[config.Playlist].Template, map[string]string{}, playlistConfig)
+				@ConfigCard(config.Podcast, podcastConfig)
+				@ConfigCard(config.Playlist, playlistConfig)
 			</section>
 		</main>
 	}

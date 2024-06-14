@@ -160,3 +160,13 @@ SELECT * FROM user_config WHERE user_id = ? AND type = ?;
 UPDATE user_config
 SET enabled = ?, template = ?
 WHERE user_id = ? AND type = ?;
+
+-- name: UpdateUserConfigEnabled :exec
+UPDATE user_config
+SET enabled = ?
+WHERE user_id = ? AND type = ?;
+
+-- name: UpdateUserConfigTemplate :exec
+UPDATE user_config
+SET template = ?
+WHERE user_id = ? AND type = ?;

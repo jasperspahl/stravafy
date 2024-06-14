@@ -14,11 +14,39 @@ const (
 	Playlist
 )
 
+func (t Type) String() string {
+	return [...]string{"Podcast", "Playlist"}[t]
+}
+
+func (t Type) Help() map[string]string {
+	return [...]map[string]string{PodcastVariables, PlaylistVariables}[t]
+}
+func (t Type) DefaultConfig() Config {
+	return DefaultConfig[t]
+}
+
+func (t Type) PreviewData() interface{} {
+	return previewData[t]
+}
+
 type Config struct {
 	Type     Type
 	Enabled  bool
 	Template string
 	Preview  string
+}
+
+func (c Config) Process(data map[string]string) (string, error) {
+	tmpl, err := template.New("t").Parse(c.Template)
+	if err != nil {
+		return "", err
+	}
+	var b bytes.Buffer
+	err = tmpl.Execute(&b, data)
+	if err != nil {
+		return "", err
+	}
+	return b.String(), nil
 }
 
 var DefaultConfig = map[Type]Config{
@@ -54,6 +82,12 @@ type PlaylistData struct {
 	Url   string
 }
 
+var PlaylistVariables = map[string]string{
+	"Name":  "name of the playlist",
+	"Owner": "owner of the playlist",
+	"Url":   "url of the playlist",
+}
+
 var previewData = map[Type]interface{}{
 	Podcast: PodcastData{
 		Name:     "PW No. 60 - Der Mullet muss weg",
@@ -87,7 +121,6 @@ func (m *Manager) GetUserConfig(uid int64, t Type) Config {
 			Type:     DefaultConfig[t].Type,
 			Enabled:  DefaultConfig[t].Enabled,
 			Template: DefaultConfig[t].Template,
-			Preview:  DefaultConfig[t].Preview,
 		}
 		err = nil
 	} else {
@@ -110,4 +143,46 @@ func (m *Manager) GetUserConfig(uid int64, t Type) Config {
 	}
 	config.Preview = b.String()
 	return config
+}
+
+func (m *Manager) UpdateUserConfigTemplate(uid int64, t Type, template string) error {
+	return m.q.UpdateUserConfigTemplate(context.Background(), database.UpdateUserConfigTemplateParams{
+		Template: template,
+		UserID:   uid,
+		Type:     int64(t),
+	})
+}
+
+func (m *Manager) UpdateUserConfigEnabled(uid int64, t Type, enabled bool) (err error) {
+	if enabled {
+		err = m.q.UpdateUserConfigEnabled(context.Background(), database.UpdateUserConfigEnabledParams{
+			UserID:  uid,
+			Type:    int64(t),
+			Enabled: 1,
+		})
+	} else {
+		err = m.q.UpdateUserConfigEnabled(context.Background(), database.UpdateUserConfigEnabledParams{
+			UserID:  uid,
+			Type:    int64(t),
+			Enabled: 0,
+		})
+	}
+	return
+}
+
+func (m *Manager) EnsureUserConfigExists(uid int64, t Type) error {
+	_, err := m.q.GetUserConfig(context.Background(), database.GetUserConfigParams{
+		UserID: uid,
+		Type:   int64(t),
+	})
+	if err == nil {
+		return nil
+	}
+	err = m.q.InsertUserConfig(context.Background(), database.InsertUserConfigParams{
+		UserID:   uid,
+		Type:     int64(t),
+		Enabled:  1,
+		Template: t.DefaultConfig().Template,
+	})
+	return err
 }

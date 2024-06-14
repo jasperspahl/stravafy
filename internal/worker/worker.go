@@ -30,7 +30,6 @@ func init() {
 		log.Fatalf("error opening worker.log: %v", err)
 	}
 	logger = log.New(logfile, "", log.LstdFlags)
-
 	shutdownCh = make(chan struct{})
 }
 
