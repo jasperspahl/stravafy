@@ -53,7 +53,7 @@ func handleStravaEvent(event Callback) {
 	infof(event.EventTime, "\tstrava user: \"%s %s\"", user.FirstName, user.LastName)
 	cm := cfgManager.New(q)
 	playlistConfig := cm.GetUserConfig(user.ID, cfgManager.Playlist)
-	podcastConfig := cm.GetUserConfig(user.ID, cfgManager.Playlist)
+	podcastConfig := cm.GetUserConfig(user.ID, cfgManager.Podcast)
 	if !playlistConfig.Enabled && !podcastConfig.Enabled {
 		infof(event.EventTime, "user disabled all processing")
 	}
