@@ -1,75 +1,142 @@
 package templates
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"stravafy/internal/manager/config"
+)
 
 templ Index() {
-<!DOCTYPE html>
-<html>
-@head()
-<body>
-    <section class="hero" data-theme="dark">
-        @nav(false)
-        <header class="container">
-            <hgroup class="container">
-            <h1>Stravafy</h1>
-            <p>Match your Spotify History to Strava</p>
-            </hgroup>
-        </header>
-    </section>
-    <section class="container">
-		<article>
-			<header class="pico-background-red-500">!!! IMPORTANT !!!</header>
-			<p>Stravafy is still very much in development! It is not yet ready for public use. Please check back later. Stravafy currently saves your complete Spotify listening history to a database. Feel free to checkout the github repo to fully understand what happens.</p>
-			<a href="https://github.com/jasperspahl/stravafy">Github: jasperspahl/stravafy</a>
-		</article>
-		<h1>How it works</h1>
-		<p>Stravafy is a web application that connects your Spotify and Strava accounts.</p> 
-		<p>After you log in with your Strava and Spotify accounts, Stravafy will save your current Spotify playing state to it's database.</p>
-		<p>When ever you upload a new activity to Strava, Stravafy will check if you were listening to music and add the playlist, playlist author and a link to the playlist you were listening to, to your activity's description</p>
-		<p>This will look something like this:</p>
-		<pre><code>
-Playlist: Corrupted Blood
-By: HandOfBlood
-https://open.spotify.com/playlist/6WlSmKm4leMtyyhqqaDKAb
-		</code></pre>
-    </section>
-</body>
-</html>
+	<!DOCTYPE html>
+	<html>
+		@head()
+		<body>
+			<section class="hero" data-theme="dark">
+				@nav(false)
+				<header class="container">
+					<hgroup class="container">
+						<h1>Stravafy</h1>
+						<p>Match your Spotify History to Strava</p>
+					</hgroup>
+				</header>
+			</section>
+			<section class="container">
+				<article>
+					<header class="pico-background-red-500">!!! IMPORTANT !!!</header>
+					<p>Stravafy is still very much in development! It is not yet ready for public use. Please check back later. Stravafy currently saves your complete Spotify listening history to a database. Feel free to check out the GitHub repo to fully understand what happens.</p>
+					<a href="https://github.com/jasperspahl/stravafy">Github: jasperspahl/stravafy</a>
+				</article>
+				<h1>How it works</h1>
+				<p>Stravafy is a web application that connects your Spotify and Strava accounts.</p>
+				<p>After you log in with your Strava and Spotify accounts, Stravafy will save your current Spotify playing state to its database.</p>
+				<p>When ever you upload a new activity to Strava, Stravafy will check if you were listening to music and add the playlist, playlist author and a link to the playlist you were listening to, to your activity's description</p>
+				<p>This will look something like this:</p>
+				<pre><code>Playlist: Corrupted Blood<br/>By: HandOfBlood</code></pre>
+			</section>
+		</body>
+	</html>
+}
+
+templ ConfigCard(configType config.Type, config config.Config) {
+	<article id={fmt.Sprintf("%s-config", configType.String())}>
+		<header>
+			{ configType.String() }
+			<input
+				name="enabled"
+				type="checkbox"
+				role="switch"
+				if config.Enabled {
+					checked
+					hx-put="/htmx/config/disable"
+				}
+				else {
+					hx-put="/htmx/config/enable"
+				}
+				hx-include={fmt.Sprintf("#%s-config [name='type']",configType.String())}
+				hx-target={fmt.Sprintf("#%s-config", configType.String())}
+				hx-swap="outerHTML"
+			/>
+		</header>
+		<form>
+			<input type="hidden" value={ strconv.Itoa(int(configType)) } name="type"/>
+			<label for="template">
+				<details>
+					<summary>Template</summary>
+					<p>The Templates use golang's text templating.</p>
+					<p>Example:</p>
+					<pre><code>{ configType.DefaultConfig().Template }</code></pre>
+					<p>You have the following variables available:</p>
+					<dl>
+						for key, value := range configType.Help() {
+							<dt><b>{ key }</b></dt>
+							<dd>{ value }</dd>
+						}
+					</dl>
+				</details>
+			</label>
+			<textarea
+				id="template"
+				name="template"
+				cols="30"
+				rows="5"
+				if !config.Enabled {
+					disabled
+				} else {
+					hx-put="/htmx/config"
+				}
+				hx-target={fmt.Sprintf("#%s-config", configType.String())}
+				hx-swap="outerHTML"
+			>{ config.Template }</textarea>
+		</form>
+		<footer><pre><code>{ config.Preview }</code></pre></footer>
+	</article>
 }
 
 type IndexAuthenticatedProps struct {
-    StravaID         int64
-    FirstName        string
-    LastName         string
-    StravaProfile    string
-    SpotifyConnected bool
-    SpotifyUserName  string
-    SpotifyID        string
+	StravaID         int64
+	FirstName        string
+	LastName         string
+	StravaProfile    string
+	SpotifyConnected bool
+	SpotifyUserName  string
+	SpotifyID        string
 }
 
-templ IndexAuthenticated(props IndexAuthenticatedProps) {
-    @layout(true) {
-        <main class="container">
-            <h1>Stravafy Overview</h1>
-            <article>
-                <div class="flex">
-                    <div><img src={props.StravaProfile} width="64" height="64" alt="" style="border-radius: 50%"/></div>
-                    <div>
-                        <p>
-                            Welcome, <strong>{props.FirstName}</strong><br/>
-                            <a href={ templ.SafeURL(fmt.Sprintf("https://www.strava.com/athletes/%d", props.StravaID)) }>Your Strava</a>
-                        </p>
-                        if props.SpotifyConnected {
-                            <p>
-                                Logged in to Spotify as <strong>{props.SpotifyUserName}</strong><br/>
-                                <a href={ templ.SafeURL(fmt.Sprintf("https://open.spotify.com/user/%s", props.SpotifyID)) }>Your Spotify</a>
-                            </p>
-                        } else {
-                            <p><a href="/auth/login/spotify" role="button">Login to Spotify</a></p>
-                        }
-                    </div>
-                </div>
-            </article>
-        </main>
-    }
+templ IndexAuthenticated(props IndexAuthenticatedProps, podcastConfig, playlistConfig config.Config) {
+	@layout(true) {
+		<main class="container">
+			<h1>Stravafy Overview</h1>
+			<article>
+				<div class="flex">
+					<div><img src={ props.StravaProfile } width="64" height="64" alt="" style="border-radius: 50%"/></div>
+					<div>
+						<p>
+							Welcome, <strong>{ props.FirstName }</strong>
+							<br/>
+							<a href={ templ.SafeURL(fmt.Sprintf("https://www.strava.com/athletes/%d", props.StravaID)) }>Your Strava</a>
+						</p>
+						if props.SpotifyConnected {
+							<p>
+								Logged in to Spotify as <strong>{ props.SpotifyUserName }</strong>
+								<br/>
+								<a href={ templ.SafeURL(fmt.Sprintf("https://open.spotify.com/user/%s", props.SpotifyID)) }>Your Spotify</a>
+							</p>
+						} else {
+							<p><a href="/auth/login/spotify" role="button">Login to Spotify</a></p>
+						}
+					</div>
+				</div>
+			</article>
+			<section>
+				<hgroup>
+					<h2>Configuration</h2>
+					<p>
+						Configure the templates that get used when precessing you activities
+					</p>
+				</hgroup>
+				@ConfigCard(config.Podcast, podcastConfig)
+				@ConfigCard(config.Playlist, playlistConfig)
+			</section>
+		</main>
+	}
 }

@@ -6,16 +6,19 @@ import (
 	"github.com/gin-gonic/gin"
 	"net/http"
 	"stravafy/internal/database"
+	"stravafy/internal/manager/config"
 	"stravafy/internal/sessions"
 	"stravafy/internal/templates"
 )
 
 type Service struct {
-	q *database.Queries
+	q             *database.Queries
+	configManager *config.Manager
 }
 
 func New(q *database.Queries) *Service {
-	return &Service{q}
+	mng := config.New(q)
+	return &Service{q, mng}
 }
 
 func (s *Service) Mount(group *gin.RouterGroup) {
@@ -56,6 +59,7 @@ func (s *Service) index(c *gin.Context) {
 		props.SpotifyUserName = spotifyUserInfo.DisplayName
 		props.SpotifyID = spotifyUserInfo.SpotifyID
 	}
-	c.HTML(http.StatusOK, "", templates.IndexAuthenticated(props))
-
+	podcastConf := s.configManager.GetUserConfig(userID, config.Podcast)
+	playlistConf := s.configManager.GetUserConfig(userID, config.Playlist)
+	c.HTML(http.StatusOK, "", templates.IndexAuthenticated(props, podcastConf, playlistConf))
 }

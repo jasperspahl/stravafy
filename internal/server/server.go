@@ -10,10 +10,12 @@ import (
 	"net/http"
 	"stravafy/internal/api"
 	"stravafy/internal/api/auth"
+	"stravafy/internal/api/htmx"
 	"stravafy/internal/api/pages"
 	"stravafy/internal/api/webhook"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
+	cfgManager "stravafy/internal/manager/config"
 	"stravafy/internal/renderer"
 	"stravafy/internal/sessions"
 )
@@ -27,9 +29,12 @@ var (
 var assets embed.FS
 
 func Init(queries *database.Queries) {
+	configManager := cfgManager.New(queries)
+
 	pagesService := pages.New(queries)
 	authService := auth.New(queries)
 	webhookService := webhook.New(queries)
+	htmxService := htmx.New(queries, configManager)
 
 	router = gin.Default()
 	router.HTMLRender = renderer.Default
@@ -39,6 +44,7 @@ func Init(queries *database.Queries) {
 	pagesService.Mount(router.Group("/"))
 	authService.Mount(router.Group("/auth"))
 	webhookService.Mount(router.Group("/callback"))
+	htmxService.Mount(router.Group("/htmx"))
 
 	conf := config.GetConfig()
 

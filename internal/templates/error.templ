@@ -1,18 +1,18 @@
 package templates
 
 import (
-    "fmt"
-    "net/http"
+	"fmt"
+	"net/http"
 )
 
 templ Error(code int, err string, isLoggedIn bool) {
-    @layout(isLoggedIn) {
-        <main class="container">
-            <hgroup>
-            <h1>Error { fmt.Sprint(code) }</h1>
-            <h3>{ http.StatusText(code) }</h3>
-            <p>{ err }</p>
-            </hgroup>
-        </main>
-    }
+	@layout(isLoggedIn) {
+		<main class="container">
+			<hgroup>
+				<h1>Error { fmt.Sprint(code) }</h1>
+				<h3>{ http.StatusText(code) }</h3>
+				<p>{ err }</p>
+			</hgroup>
+		</main>
+	}
 }

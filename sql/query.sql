@@ -151,3 +151,22 @@ FROM spotify_user_history
 WHERE
 user_id = ? AND timestamp > ? AND timestamp < ?
 ORDER BY timestamp;
+
+-- name: InsertUserConfig :exec
+INSERT INTO user_config (user_id, type, enabled, template) VALUES (?, ?, ?, ?);
+-- name: GetUserConfig :one
+SELECT * FROM user_config WHERE user_id = ? AND type = ?;
+-- name: UpdateUserConfig :exec
+UPDATE user_config
+SET enabled = ?, template = ?
+WHERE user_id = ? AND type = ?;
+
+-- name: UpdateUserConfigEnabled :exec
+UPDATE user_config
+SET enabled = ?
+WHERE user_id = ? AND type = ?;
+
+-- name: UpdateUserConfigTemplate :exec
+UPDATE user_config
+SET template = ?
+WHERE user_id = ? AND type = ?;
