@@ -1,0 +1,35 @@
+.auto-grid {
+	grid-column-gap: var(--pico-grid-column-gap);
+	grid-row-gap: var(--pico-grid-row-gap);
+	display: grid;
+	grid-template-columns: 1fr;
+}
+@media(min-width: 576px) {
+	.auto-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media(min-width: 768px) {
+	.auto-grid {
+		grid-template-columns: repeat(3, 1fr);
+	}
+}
+
+@media(min-width: 1024px) {
+	.auto-grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+@media(min-width: 1280px) {
+	.auto-grid {
+		grid-template-columns: repeat(5, 1fr);
+	}
+}
+
+@media(min-width: 1536px) {
+	.auto-grid {
+		grid-template-columns: repeat(6, 1fr);
+	}
+}

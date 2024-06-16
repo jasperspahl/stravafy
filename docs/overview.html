@@ -1,0 +1,17 @@
+<section>
+	<div role="group">
+		<button hx-get="/overview.html" hx-swap="outerHTML" hx-target="closest section">Overview</button>
+		<button hx-get="/activities.html" hx-swap="outerHTML" hx-target="closest section" class="outline">Activities</button>
+		<button hx-get="/config.html" hx-swap="outerHTML" hx-target="closest section" class="outline">Config</button>
+	</div>
+	<h2>Last Playlists</h2>
+	<div class="auto-grid">
+		<article>
+			<img src="https://seed-mix-image.spotifycdn.com/v6/img/desc/Summer%20Chill/en/default" alt="" style="width:100%;aspect-ratio:1/1"/>
+			<a href="https://open.spotify.com/playlist/37i9dQZF1EIhu6YNg5vTSS" target="_blank" rel="noopener"> Summer Chill Mix </a>
+			<span>by <a href="https://open.spotify.com/user/spotify" target="_blank" rel="noopener">Spotify</a></span>
+		</article>
+		<article aria-busy="true" hx-get="/playlist.html" hx-swap="outerHTML" hx-trigger="revealed">
+</article>
+	</div>
+</section>

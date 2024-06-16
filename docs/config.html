@@ -1,101 +1,47 @@
-<html>
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-    <title>Stravafy</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css"
-    />
-  </head>
-  <body>
-    <nav class="container-fluid">
-      <ul>
-        <li><strong>Stravafy</strong></li>
-      </ul>
-      <ul>
-        <li><a href="/auth/logout" role="button">Logout</a></li>
-      </ul>
-    </nav>
-    <main class="container">
-      <h1>Stravafy Overview</h1>
-      <article>
-        <div class="flex">
-          <div>
-            <img
-              src="https://dgalywyr863hv.cloudfront.net/pictures/athletes/45361581/13816622/3/large.jpg"
-              width="64"
-              height="64"
-              alt=""
-              style="border-radius: 50%"
-            />
-          </div>
-          <div>
-            <p>
-              Welcome, <strong>Jasper</strong><br /><a
-                href="https://www.strava.com/athletes/45361581"
-                >Your Strava</a
-              >
-            </p>
-            <p>
-              Logged in to Spotify as <strong>jasperspahl</strong><br /><a
-                href="https://open.spotify.com/user/jasperspahl"
-                >Your Spotify</a
-              >
-            </p>
-          </div>
-        </div>
-      </article>
-      <section>
-        <hgroup>
-          <h2>Configuration</h2>
-          <p>
-            Configure the templates that get used when precessing you activities
-          </p>
-        </hgroup>
-        <article id="podcast-config">
-          <header>
-            Podcast
-            <input name="enabled" type="checkbox" role="switch" checked />
-          </header>
-          <form>
-            <label for="template">
-              <details>
-                <summary>Template</summary>
-                <p>The Templates use golangs text templating.</p>
-                <p>Example:</p>
-                <pre><code>Podcast: {{ .Show }}<br/>Episode: {{ .Name }}</code></pre>
-                <p>You have the following variables available:</p>
-                <dl>
-                  <dt><b>Name</b></dt>
-                  <dd>name of the episode</dd>
-                  <dt><b>Show</b></dt>
-                  <dd>name of the podcast</dd>
-                  <dt><b>Url</b></dt>
-                  <dd>url of the episode</dd>
-                  <dt><b>ShowUrl</b></dt>
-                  <dd>url of the podcast</dd>
-                </dl>
-              </details>
-            </label>
-            <textarea
-              id="template"
-              name="podcast-template"
-              cols="30"
-              rows="5"
-            ></textarea>
-          </form>
-          <footer>test</footer>
-        </article>
-      </section>
-    </main>
-    <footer class="container">
-      created with love by jasperspahl<br />powered by strava
-    </footer>
-  </body>
-</html>
+<section>
+	<div role="group">
+		<button hx-get="/overview.html" hx-swap="outerHTML" hx-target="closest section" class="outline">Overview</button>
+		<button hx-get="/activities.html" hx-swap="outerHTML" hx-target="closest section" class="outline">Activities</button>
+		<button hx-get="/config.html" hx-swap="outerHTML" hx-target="closest section">Config</button>
+	</div>
+	<hgroup>
+		<h2>Configuration</h2>
+		<p>
+			Configure the templates that get used when precessing you activities
+	</p>
+	</hgroup>
+	<article id="podcast-config">
+	<header>
+		Podcast
+		<input name="enabled" type="checkbox" role="switch" checked />
+	</header>
+	<form>
+	<label for="template">
+		<details>
+			<summary>Template</summary>
+			<p>The Templates use golangs text templating.</p>
+			<p>Example:</p>
+			<pre><code>Podcast: {{ .Show }}<br/>Episode: {{ .Name }}</code></pre>
+			<p>You have the following variables available:</p>
+			<dl>
+			<dt><b>Name</b></dt>
+			<dd>name of the episode</dd>
+			<dt><b>Show</b></dt>
+			<dd>name of the podcast</dd>
+			<dt><b>Url</b></dt>
+			<dd>url of the episode</dd>
+			<dt><b>ShowUrl</b></dt>
+			<dd>url of the podcast</dd>
+			</dl>
+		</details>
+		</label>
+		<textarea
+			id="template"
+			name="podcast-template"
+			cols="30"
+			rows="5"
+		></textarea>
+		</form>
+		<footer>test</footer>
+	</article>
+</section>

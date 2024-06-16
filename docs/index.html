@@ -1,0 +1,68 @@
+<html>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Stravafy</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.colors.min.css"
+    />
+    <link
+      rel="stylesheet"
+      href="/styles.css"
+    />
+
+    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+  </head>
+  <body>
+    <nav class="container-fluid">
+      <ul>
+        <li><strong>Stravafy</strong></li>
+      </ul>
+      <ul>
+        <li><a href="/auth/logout" role="button">Logout</a></li>
+      </ul>
+    </nav>
+    <main class="container">
+      <h1>Stravafy Overview</h1>
+      <article>
+        <div class="flex">
+          <div>
+            <img
+              src="https://dgalywyr863hv.cloudfront.net/pictures/athletes/45361581/13816622/3/large.jpg"
+              width="64"
+              height="64"
+              alt=""
+              style="border-radius: 50%"
+            />
+          </div>
+          <div>
+            <p>
+              Welcome, <strong>Jasper</strong><br /><a
+                href="https://www.strava.com/athletes/45361581"
+                >Your Strava</a
+              >
+            </p>
+            <p>
+              Logged in to Spotify as <strong>jasperspahl</strong><br /><a
+                href="https://open.spotify.com/user/jasperspahl"
+                >Your Spotify</a
+              >
+            </p>
+          </div>
+        </div>
+      </article>
+      <section aria-busy="true" hx-trigger="load" hx-get="overview.html" hx-swap="outerHTML">
+        Loading ...
+      </section>
+    </main>
+    <footer class="container">
+      created with love by jasperspahl<br />powered by strava
+    </footer>
+  </body>
+</html>
