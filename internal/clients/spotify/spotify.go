@@ -1,12 +1,13 @@
 package spotify
 
 import (
-	"errors"
-	"encoding/json"
 	"context"
-	"golang.org/x/oauth2"
+	"encoding/json"
+	"errors"
 	"net/http"
 	"stravafy/internal/config"
+
+	"golang.org/x/oauth2"
 )
 
 
@@ -22,7 +23,7 @@ func NewSpotifyClient(token oauth2.Token) *Client {
 }
 
 func (c *Client) GetPlaylist(href string) (*MinimalPlaylist, error) {
-	resp, err := c.httpClient.Get(href + "?fields=name,owner.display_name")
+	resp, err := c.httpClient.Get(href + "?fields=name,owner(display_name, external_urls.spotify)")
 	if err != nil {
 		return nil, err
 	}
@@ -31,6 +32,23 @@ func (c *Client) GetPlaylist(href string) (*MinimalPlaylist, error) {
 	}
 	decoder := json.NewDecoder(resp.Body)
 	var pl MinimalPlaylist
+	err = decoder.Decode(&pl)
+	if err != nil {
+		return nil, err
+	}
+	return &pl, nil
+}
+
+func (c *Client) GetPlaylistWithImages(href string) (*PlaylistWithImages, error) {
+	resp, err := c.httpClient.Get(href + "?fields=name,owner(display_name,external_urls.spotify),external_urls.spotify,images")
+	if err != nil {
+		return nil, err
+	}
+	if resp.StatusCode != http.StatusOK {
+		return nil, errors.New("playlist not found exited with status " + resp.Status)
+	}
+	decoder := json.NewDecoder(resp.Body)
+	var pl PlaylistWithImages
 	err = decoder.Decode(&pl)
 	if err != nil {
 		return nil, err

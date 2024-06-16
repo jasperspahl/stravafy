@@ -5,7 +5,6 @@ import (
 	"embed"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"log"
 	"net/http"
 	"stravafy/internal/api"
@@ -16,8 +15,11 @@ import (
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	cfgManager "stravafy/internal/manager/config"
+	"stravafy/internal/manager/playlist"
 	"stravafy/internal/renderer"
 	"stravafy/internal/sessions"
+
+	"github.com/gin-gonic/gin"
 )
 
 var (
@@ -30,11 +32,12 @@ var assets embed.FS
 
 func Init(queries *database.Queries) {
 	configManager := cfgManager.New(queries)
+	playlistManager := playlist.New(queries)
 
 	pagesService := pages.New(queries)
 	authService := auth.New(queries)
 	webhookService := webhook.New(queries)
-	htmxService := htmx.New(queries, configManager)
+	htmxService := htmx.New(queries, configManager, playlistManager)
 
 	router = gin.Default()
 	router.HTMLRender = renderer.Default

@@ -170,3 +170,12 @@ WHERE user_id = ? AND type = ?;
 UPDATE user_config
 SET template = ?
 WHERE user_id = ? AND type = ?;
+
+-- name: GetUserPlaylists :many
+SELECT suhc.uri, suhc.href, MAX(suh."timestamp") max_time
+FROM spotify_user_history_context suhc
+JOIN spotify_user_history suh ON suhc.history_id = suh.id
+WHERE suh.user_id = ? AND suhc."type" = 'playlist'
+GROUP BY suhc.href
+ORDER BY max_time DESC
+LIMIT ? OFFSET ?

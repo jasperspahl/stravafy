@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 	"stravafy/internal/manager/config"
+	"stravafy/internal/manager/playlist"
 )
 
 templ Index() {
@@ -100,9 +101,10 @@ type IndexAuthenticatedProps struct {
 	SpotifyConnected bool
 	SpotifyUserName  string
 	SpotifyID        string
+	CurrentPage      string
 }
 
-templ IndexAuthenticated(props IndexAuthenticatedProps, podcastConfig, playlistConfig config.Config) {
+templ IndexAuthenticated(props IndexAuthenticatedProps) {
 	@layout(true) {
 		<main class="container">
 			<h1>Stravafy Overview</h1>
@@ -127,16 +129,114 @@ templ IndexAuthenticated(props IndexAuthenticatedProps, podcastConfig, playlistC
 					</div>
 				</div>
 			</article>
-			<section>
-				<hgroup>
-					<h2>Configuration</h2>
-					<p>
-						Configure the templates that get used when precessing you activities
-					</p>
-				</hgroup>
-				@ConfigCard(config.Podcast, podcastConfig)
-				@ConfigCard(config.Playlist, playlistConfig)
-			</section>
+			@loadPage(props.CurrentPage)
 		</main>
 	}
+}
+
+templ ConfigView(podcastConfig, playlistConfig config.Config) {
+	<section>
+		@navi("config")
+		<hgroup>
+			<h2>Configuration</h2>
+			<p>
+				Configure the templates that get used when processing you activities
+			</p>
+		</hgroup>
+		@ConfigCard(config.Podcast, podcastConfig)
+		@ConfigCard(config.Playlist, playlistConfig)
+	</section>
+}
+
+templ PlaylistView() {
+	<section>
+		@navi("playlists")
+		<hgroup>
+			<h2>Playlists</h2>
+			<p>
+				All the playlists you've been listening to recently
+			</p>
+		</hgroup>
+		<div class="auto-grid">
+			<article aria-busy="true" hx-trigger="load" hx-swap="outerHTML" hx-get="/htmx/playlist/cards">Loading...</article>
+		</div>
+	</section>
+}
+
+templ PlaylistCards(playlists []playlist.Playlist) {
+	for _, playlist := range playlists {
+		@playlistCard(playlist)
+	}
+}
+
+templ PlaylistCardsWithLoadMore(playlists []playlist.Playlist, limit, offset int64) {
+		for _, playlist := range playlists {
+			@playlistCard(playlist)
+		}
+		<article
+			aria-busy="true"
+			hx-swap="outerHTML"
+			hx-get={fmt.Sprintf("/htmx/playlist/cards?limit=%d&offset=%d", limit, offset)}
+			hx-trigger="revealed"
+		>
+			Loading ...
+		</article>
+}
+
+func shorten(s string, l int) string {
+	r := []rune(s)
+	if len(r) > l {
+		return string(r[:l-3]) + "..."
+	}
+	return s
+}
+
+templ playlistCard(playlist playlist.Playlist) {
+	<article>
+		<img src={ playlist.Image } alt={ playlist.Name } style="width: 100%;aspect-ratio: 1/1;object-fit: cover"/>
+		<a href={ templ.SafeURL(playlist.Url) } target="_blank">
+			{ shorten(playlist.Name,20) }
+		</a>
+		<span>
+			by
+			<a href={ templ.SafeURL(playlist.Owner.Url) } target="_blank">
+				{ shorten(playlist.Owner.Name, 20) }
+			</a>
+		</span>
+	</article>
+}
+
+templ loadPage(page string) {
+	<section>
+		@navi(page)
+		<article aria-busy="true" hx-trigger="load" hx-swap="outerHTML" hx-get={fmt.Sprintf("/htmx/%s/view", page)} hx-target="closest section">Loading...</article>
+	</section>
+}
+
+templ navi(active string) {
+	<div role="group">
+		<button
+			hx-get="/htmx/config/view"
+			hx-swap="outerHTML"
+			hx-target="closest section"
+			hx-push-url="/?page=config"
+			if active != "config" {
+				class="outline"
+			}
+		>
+			Config
+		</button>
+		<button
+			hx-get="/htmx/playlist/view"
+			hx-swap="outerHTML"
+			hx-target="closest section"
+			hx-push-url="/?page=playlist"
+			if active != "playlists" {
+				class="outline"
+			}
+			
+		>
+			Playlists
+		</button>
+	</div>
 }
