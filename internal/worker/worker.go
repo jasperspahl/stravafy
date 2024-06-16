@@ -3,16 +3,15 @@ package worker
 import (
 	"context"
 	"database/sql"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"golang.org/x/oauth2"
-	"io"
 	"log"
 	"net/http"
 	"os"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
+	"stravafy/internal/clients/spotify"
 	"strings"
 	"sync"
 	"time"
@@ -74,8 +73,7 @@ func worker(id int64, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 		Expiry:       time.Unix(dbToken.ExpiresAt, 0),
 	}
 
-	oauth2Conf := config.GetSpotifyOauthConfig()
-	client := oauth2Conf.Client(context.Background(), &token)
+	client := spotify.NewSpotifyClient(token)
 
 	conf := config.GetConfig()
 	ticker := time.Tick(time.Duration(conf.Spotify.UpdateInterval) * time.Second)
@@ -83,22 +81,21 @@ func worker(id int64, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 	for {
 		select {
 		case <-ticker:
-			resp, err := client.Get("https://api.spotify.com/v1/me/player?additional_types=track,episode")
+			statusCode, playerState, item, track, episode, err := client.GetPlayerState()
 			if err != nil {
 				errorf(id, "%v", err)
 				continue
 			}
-			switch resp.StatusCode {
-			case http.StatusNoContent:
+			if statusCode == http.StatusNoContent || playerState != nil && !playerState.IsPlaying {
 				err := handlePaused(id, queries)
 				if err != nil {
 					errorf(id, "%v", err)
 				}
-			case http.StatusOK:
-				err := handlePlaying(id, queries, resp)
-				if err != nil {
-					errorf(id, "%v", err)
-				}
+				continue
+			}
+			err = handlePlaying(id, queries, playerState, item, track, episode)
+			if err != nil {
+				errorf(id, "%v", err)
 			}
 		case <-shutdown:
 			infof(id, "shutting down worker for %d", id)
@@ -108,54 +105,18 @@ func worker(id int64, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 
 }
 
-func handlePlaying(id int64, q *database.Queries, resp *http.Response) error {
-	bytes, err := io.ReadAll(resp.Body)
-	if err != nil {
-		errorf(id, "could not read body: %v", err)
-		return err
-	}
-	var playerState PlayerState
-	err = json.Unmarshal(bytes, &playerState)
-	if err != nil {
-		errorf(id, "could not serialize response: %v", err)
-		return err
-	}
-	if !playerState.IsPlaying {
-		return handlePaused(id, q)
-	}
-	var item ItemObject
-	err = json.Unmarshal(playerState.Item, &item)
-	if err != nil {
-		return fmt.Errorf("could not serialize item: %v", err)
-	}
-	var track TrackObject
-	var episode EpisodeObject
-	switch item.Type {
-	case "track":
-		err := json.Unmarshal(playerState.Item, &track)
-		if err != nil {
-			return err
-		}
-	case "episode":
-		err := json.Unmarshal(playerState.Item, &episode)
-		if err != nil {
-			return err
-		}
-	default:
-		infof(id, string(bytes))
-		return fmt.Errorf("looking for type \"track\" or \"episode\" found %s", item.Type)
-	}
+func handlePlaying(id int64, q *database.Queries, playerState *spotify.PlayerState, item *spotify.ItemObject, track *spotify.TrackObject, episode *spotify.EpisodeObject) error {
 	lastHistEntry, err := q.GetLastHistoryEntryComplete(context.Background(), id)
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return err
 	}
 	if errors.Is(err, sql.ErrNoRows) || hasChanged(id, lastHistEntry, playerState, item) {
-		return insertPlayingState(id, q, playerState, item, &track, &episode)
+		return insertPlayingState(id, q, playerState, item, track, episode)
 	}
 	return nil
 }
 
-func hasChanged(id int64, lastEntry database.GetLastHistoryEntryCompleteRow, state PlayerState, item ItemObject) bool {
+func hasChanged(id int64, lastEntry database.GetLastHistoryEntryCompleteRow, state *spotify.PlayerState, item *spotify.ItemObject) bool {
 	if lastEntry.IsPlaying != state.IsPlaying {
 		return true
 	}
@@ -168,7 +129,7 @@ func hasChanged(id int64, lastEntry database.GetLastHistoryEntryCompleteRow, sta
 	return false
 }
 
-func insertPlayingState(id int64, q *database.Queries, playerState PlayerState, item ItemObject, track *TrackObject, episode *EpisodeObject) error {
+func insertPlayingState(id int64, q *database.Queries, playerState *spotify.PlayerState, item *spotify.ItemObject, track *spotify.TrackObject, episode *spotify.EpisodeObject) error {
 	infof(id, "inserting new player state")
 	histId, err := q.InsertHistory(context.Background(), database.InsertHistoryParams{
 		UserID:    id,

@@ -2,12 +2,9 @@ package worker
 
 import (
 	"context"
-	"encoding/json"
-	"errors"
 	"golang.org/x/oauth2"
-	"net/http"
 	"stravafy/internal/clients/strava"
-	"stravafy/internal/config"
+	"stravafy/internal/clients/spotify"
 	"stravafy/internal/database"
 	cfgManager "stravafy/internal/manager/config"
 	"strings"
@@ -90,11 +87,20 @@ func handleStravaEvent(event Callback) {
 		errorf(event.EventTime, "an error accourd while fetching history: %v", err)
 		return
 	}
-	getPlaylist := func(href string) (*MinimalPlaylist, error) {
-		return getPlaylist(q, user.ID, href)
+	spotifyDbToken, err := q.GetSpotifyAccessToken(context.Background(), user.ID)
+	if err != nil {
+		errorf(event.EventTime, "error while fetching spotify accesstoken: %v", err)
+		return
 	}
+	spotifyToken := oauth2.Token{
+		TokenType:    spotifyDbToken.TokenType,
+		AccessToken:  spotifyDbToken.AccessToken,
+		RefreshToken: spotifyDbToken.RefreshToken,
+		Expiry:       time.Unix(spotifyDbToken.ExpiresAt, 0),
+	}
+	spotifyClient := spotify.NewSpotifyClient(spotifyToken)
 
-	newDescription := generateNewDescription(event.EventTime, histEntries, playlistConfig, podcastConfig, getPlaylist)
+	newDescription := generateNewDescription(event.EventTime, histEntries, playlistConfig, podcastConfig, spotifyClient.GetPlaylist)
 	if newDescription == "" {
 		infof(event.EventTime, "done")
 		return
@@ -118,7 +124,7 @@ func handleStravaEvent(event Callback) {
 	}
 }
 
-func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntriesBetweenRow, playlistConfig, podcastConfig cfgManager.Config, getPlaylist func(string) (*MinimalPlaylist, error)) string {
+func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntriesBetweenRow, playlistConfig, podcastConfig cfgManager.Config, getPlaylist func(string) (*spotify.MinimalPlaylist, error)) string {
 
 	playlists := make(map[string]string)
 	podcastEpisodes := make([]int, 0)
@@ -175,38 +181,3 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 
 }
 
-type MinimalPlaylist struct {
-	Name  string `json:"name"`
-	Owner struct {
-		DisplayName string `json:"display_name"`
-	} `json:"owner"`
-}
-
-func getPlaylist(q *database.Queries, userId int64, playlistHref string) (*MinimalPlaylist, error) {
-	oauth2config := config.GetSpotifyOauthConfig()
-	dbToken, err := q.GetSpotifyAccessToken(context.Background(), userId)
-	if err != nil {
-		return nil, err
-	}
-	token := oauth2.Token{
-		TokenType:    dbToken.TokenType,
-		AccessToken:  dbToken.AccessToken,
-		RefreshToken: dbToken.RefreshToken,
-		Expiry:       time.Unix(dbToken.ExpiresAt, 0),
-	}
-	client := oauth2config.Client(context.Background(), &token)
-	resp, err := client.Get(playlistHref + "?fields=name,owner.display_name")
-	if err != nil {
-		return nil, err
-	}
-	if resp.StatusCode != http.StatusOK {
-		return nil, errors.New("playlist not found")
-	}
-	decoder := json.NewDecoder(resp.Body)
-	var pl MinimalPlaylist
-	err = decoder.Decode(&pl)
-	if err != nil {
-		return nil, err
-	}
-	return &pl, nil
-}
