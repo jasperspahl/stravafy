@@ -100,7 +100,7 @@ func (s *Service) GetUserConfig(c *gin.Context) {
 	}
 	playlistConf := s.configManager.GetUserConfig(uid, config.Playlist)
 	podcastConf := s.configManager.GetUserConfig(uid, config.Podcast)
-	c.HTML(http.StatusOK, "", templates.ConfigView(playlistConf, podcastConf))
+	c.HTML(http.StatusOK, "", templates.ConfigView([]config.Config{playlistConf, podcastConf}))
 }
 
 type ConfigType struct {
@@ -136,7 +136,7 @@ func (s *Service) ToggleUserConfig(enable bool) func(*gin.Context) {
 			return
 		}
 		conf := s.configManager.GetUserConfig(uid, cfg.Type)
-		c.HTML(http.StatusOK, "", templates.ConfigCard(cfg.Type, conf))
+		c.HTML(http.StatusOK, "", templates.ConfigCard(conf))
 	}
 }
 
@@ -173,5 +173,5 @@ func (s *Service) EditUserConfig(c *gin.Context) {
 		return
 	}
 	conf := s.configManager.GetUserConfig(uid, cfg.Type)
-	c.HTML(http.StatusOK, "", templates.ConfigCard(cfg.Type, conf))
+	c.HTML(http.StatusOK, "", templates.ConfigCard(conf))
 }

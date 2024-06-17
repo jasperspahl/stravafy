@@ -22,7 +22,7 @@ header hgroup :last-child {
 	grid-column-gap: var(--pico-grid-column-gap);
 	grid-row-gap: var(--pico-grid-row-gap);
 	display: grid;
-	grid-template-columns: 1fr;
+	grid-template-columns: repeat(2, 1fr);
 }
 @media(min-width: 576px) {
 	.auto-grid {

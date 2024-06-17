@@ -38,10 +38,10 @@ templ Index() {
 	</html>
 }
 
-templ ConfigCard(configType config.Type, config config.Config) {
-	<article id={fmt.Sprintf("%s-config", configType.String())}>
+templ ConfigCard(config config.Config) {
+	<article id={fmt.Sprintf("%s-config", config.Type.String())}>
 		<header>
-			{ configType.String() }
+			{ config.Type.String() }
 			<input
 				name="enabled"
 				type="checkbox"
@@ -53,22 +53,22 @@ templ ConfigCard(configType config.Type, config config.Config) {
 				else {
 					hx-put="/htmx/config/enable"
 				}
-				hx-include={fmt.Sprintf("#%s-config [name='type']",configType.String())}
-				hx-target={fmt.Sprintf("#%s-config", configType.String())}
+				hx-include={fmt.Sprintf("#%s-config [name='type']",config.Type.String())}
+				hx-target={fmt.Sprintf("#%s-config", config.Type.String())}
 				hx-swap="outerHTML"
 			/>
 		</header>
 		<form>
-			<input type="hidden" value={ strconv.Itoa(int(configType)) } name="type"/>
+			<input type="hidden" value={ strconv.Itoa(int(config.Type)) } name="type"/>
 			<label for="template">
 				<details>
 					<summary>Template</summary>
 					<p>The Templates use golang's text templating.</p>
 					<p>Example:</p>
-					<pre><code>{ configType.DefaultConfig().Template }</code></pre>
+					<pre><code>{ config.Type.DefaultConfig().Template }</code></pre>
 					<p>You have the following variables available:</p>
 					<dl>
-						for key, value := range configType.Help() {
+						for key, value := range config.Type.Help() {
 							<dt><b>{ key }</b></dt>
 							<dd>{ value }</dd>
 						}
@@ -85,7 +85,7 @@ templ ConfigCard(configType config.Type, config config.Config) {
 				} else {
 					hx-put="/htmx/config"
 				}
-				hx-target={fmt.Sprintf("#%s-config", configType.String())}
+				hx-target={fmt.Sprintf("#%s-config", config.Type.String())}
 				hx-swap="outerHTML"
 			>{ config.Template }</textarea>
 		</form>
@@ -134,7 +134,7 @@ templ IndexAuthenticated(props IndexAuthenticatedProps) {
 	}
 }
 
-templ ConfigView(podcastConfig, playlistConfig config.Config) {
+templ ConfigView(configs []config.Config) {
 	<section>
 		@navi("config")
 		<hgroup>
@@ -143,8 +143,9 @@ templ ConfigView(podcastConfig, playlistConfig config.Config) {
 				Configure the templates that get used when processing you activities
 			</p>
 		</hgroup>
-		@ConfigCard(config.Podcast, podcastConfig)
-		@ConfigCard(config.Playlist, playlistConfig)
+		for _, config := range configs {
+			@ConfigCard(config)
+		}
 	</section>
 }
 
