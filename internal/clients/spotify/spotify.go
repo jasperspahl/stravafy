@@ -19,11 +19,11 @@ func NewSpotifyClient(token oauth2.Token) *Client {
 	oauth2Config := config.GetSpotifyOauthConfig()
 	return &Client{
 		httpClient: oauth2Config.Client(context.Background(), &token),
-	} 
+	}
 }
 
 func (c *Client) GetPlaylist(href string) (*MinimalPlaylist, error) {
-	resp, err := c.httpClient.Get(href + "?fields=name,owner(display_name, external_urls.spotify)")
+	resp, err := c.httpClient.Get(href + "?fields=name,owner(display_name,external_urls.spotify)")
 	if err != nil {
 		return nil, err
 	}
