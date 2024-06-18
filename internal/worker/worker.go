@@ -120,7 +120,7 @@ func hasChanged(id int64, lastEntry database.GetLastHistoryEntryCompleteRow, sta
 	if lastEntry.IsPlaying != state.IsPlaying {
 		return true
 	}
-	if lastEntry.CtxUri != state.Context.Uri {
+	if state.Context != nil && lastEntry.CtxUri != state.Context.Uri {
 		return true
 	}
 	if lastEntry.ItemUri != item.Uri {
