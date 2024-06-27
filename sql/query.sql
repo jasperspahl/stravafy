@@ -178,4 +178,12 @@ JOIN spotify_user_history suh ON suhc.history_id = suh.id
 WHERE suh.user_id = ? AND suhc."type" = 'playlist'
 GROUP BY suhc.href
 ORDER BY max_time DESC
-LIMIT ? OFFSET ?
+LIMIT ? OFFSET ?;
+
+-- name: GetUserHistoryItems :many
+SELECT suhi.href, suhi.external_url, suhi.name, suhi.artists, suhi.album, suhi.episode_show_name, suh."timestamp"
+FROM spotify_user_history_item suhi
+JOIN spotify_user_history suh ON suhi.history_id = suh.id
+WHERE suh.user_id = ?
+ORDER BY suh."timestamp" DESC
+LIMIT ? OFFSET ?;

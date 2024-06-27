@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
+	"database/sql"
 	"stravafy/internal/database"
 	"stravafy/internal/manager/config"
 	"stravafy/internal/manager/playlist"
@@ -33,6 +34,8 @@ func (s *Service) Mount(group *gin.RouterGroup) {
 	group.GET("config/view", s.GetUserConfig)
 	group.GET("playlist/view", s.GetPlaylistView)
 	group.GET("playlist/cards", s.GetPlaylistCards)
+	group.GET("items/view", s.GetItemsView)
+	group.GET("items", s.GetItems)
 }
 
 func ensureAuthenticatedMiddleware(c *gin.Context) {
@@ -214,4 +217,67 @@ func (s *Service) EditUserConfig(c *gin.Context) {
 	}
 	conf := s.configManager.GetUserConfig(uid, cfg.Type)
 	c.HTML(http.StatusOK, "", templates.ConfigCard(conf))
+}
+
+func (s *Service) GetItemsView(c *gin.Context) {
+	c.HTML(http.StatusOK, "", templates.ItemsView())
+}
+
+func (s *Service) GetItems(c *gin.Context) {
+	session, err := sessions.GetSession(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	uid, err := session.GetUserId(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	limitStr := c.DefaultQuery("limit", "100")
+	offsetStr := c.DefaultQuery("offset", "0")
+	limit, err := strconv.ParseInt(limitStr, 10, 64)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	offset, err := strconv.ParseInt(offsetStr, 10, 64)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+
+	items, err := s.q.GetUserHistoryItems(c, database.GetUserHistoryItemsParams{
+		UserID: uid,
+		Limit:  limit,
+		Offset: offset,
+	})
+	result := make([]templates.HistoryItem, 0, len(items))
+	if err == sql.ErrNoRows {} else if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	for _, item := range items {
+		histItem := templates.HistoryItem{
+			Time:   item.Timestamp.String(),
+			Href:   item.ExternalUrl,
+			Track:  item.Name,
+			Artist: "",
+		}
+		if item.Artists.Valid {
+			histItem.Artist = item.Artists.String
+		}
+		if item.Album.Valid {
+			histItem.Album = item.Album.String
+		}
+		if item.EpisodeShowName.Valid {
+			histItem.Album = item.EpisodeShowName.String
+		}
+		result = append(result, histItem)
+	}
+	if len(result) < int(limit) {
+		c.HTML(http.StatusOK, "", templates.HistoryItems(result))
+		return
+	}
+	c.HTML(http.StatusOK, "", templates.HistoryItemsWithLoadMore(result, limit, offset+limit))
 }
