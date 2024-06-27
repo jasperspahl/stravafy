@@ -19,6 +19,28 @@ templ nav(loggedIn bool) {
         </ul>
         <ul>
                 if loggedIn {
+					<li>
+						<a
+							hx-get="/htmx/config/view"
+							hx-swap="innerHTML"
+							hx-target="#content"
+							hx-push-url="?page=config"
+							class="contrast"
+						>
+							Config
+						</a>
+					</li>
+					<li>
+						<a
+							hx-get="/htmx/playlist/view"
+							hx-swap="innerHTML"
+							hx-target="#content"
+							hx-push-url="?page=playlist"
+							class="contrast"
+						>
+							Playlists
+						</a>
+					</li>
                     <li><a href="/auth/logout" role="button">Logout</a></li>
                 } else {
                     <li><a href="/auth/login"><img src="/static/assets/btn_strava_connectwith_orange.svg" /></a></li>
@@ -51,6 +73,6 @@ templ head() {
     <link
         rel="stylesheet"
         href="/static/assets/css/styles.css" />
-    <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+	<script src="https://unpkg.com/htmx.org@2.0.0" integrity="sha384-wS5l5IKJBvK6sPTKa2WZ1js3d947pvWXbPJ1OmWfEuxLgeHcEbjUUA5i9V5ZkpCw" crossorigin="anonymous"></script>
 </head>
 }

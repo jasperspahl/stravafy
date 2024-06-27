@@ -4,23 +4,28 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"github.com/gin-gonic/gin"
-	"golang.org/x/oauth2"
 	"net/http"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
 	"stravafy/internal/sessions"
 	"strings"
+
+	"github.com/gin-gonic/gin"
+	"golang.org/x/oauth2"
 )
 
 func (s *Service) login(c *gin.Context) {
 	host := c.Request.Host
 	conf := config.GetConfig()
+	redirectURL := c.Query("redirect")
 	method := "https"
 	if parts := strings.Split(host, ":"); len(parts) > 1 {
 		method = "http"
 	}
 	s.stravaOauthConfig.RedirectURL = fmt.Sprintf("%s://%s/auth/strava/callback", method, host)
+	if redirectURL != "" {
+		s.stravaOauthConfig.RedirectURL += "?redirect=" + redirectURL
+	}
 	url := s.stravaOauthConfig.AuthCodeURL(conf.Strava.StateString, oauth2.SetAuthURLParam("approval_prompt", conf.Strava.ApprovalPrompt))
 	c.Redirect(http.StatusSeeOther, url)
 }
@@ -33,6 +38,7 @@ type OauthCallback struct {
 
 func (s *Service) stravaCallback(c *gin.Context) {
 	errorString := c.Query("error")
+	redirectURL := c.Query("redirect")
 	if errorString != "" {
 		_ = c.Error(ErrNotAuthorized)
 		return
@@ -121,6 +127,10 @@ func (s *Service) stravaCallback(c *gin.Context) {
 	err = session.SetUserId(c, userId)
 	if err != nil {
 		_ = c.Error(err)
+		return
+	}
+	if redirectURL != "" {
+		c.Redirect(http.StatusSeeOther, redirectURL)
 		return
 	}
 	c.Redirect(http.StatusSeeOther, "/")

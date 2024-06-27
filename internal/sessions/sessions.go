@@ -8,7 +8,6 @@ import (
 	"errors"
 	"github.com/gin-gonic/gin"
 	"io"
-	"log"
 	"net/http"
 	"stravafy/internal/database"
 	"stravafy/internal/templates"
@@ -40,6 +39,7 @@ type Session interface {
 type session struct {
 	sessionID string
 	queries   *database.Queries
+	userID    int64
 }
 
 func newSession(ctx *gin.Context, queries *database.Queries) (*session, error) {
@@ -97,9 +97,11 @@ func (s *session) GetUser(ctx context.Context) (database.User, error) {
 }
 
 func (s *session) GetUserId(ctx context.Context) (int64, error) {
+	if s.userID != 0 {
+		return s.userID, nil
+	}
 	userID, err := s.queries.GetUserIdFromSession(ctx, s.sessionID)
 	if err != nil {
-		log.Printf("Session.GetUserID: %v", err)
 		return 0, ErrSessionNotValid
 	}
 	if !userID.Valid {
@@ -113,10 +115,14 @@ func (s *session) GetSessionID() string {
 }
 
 func (s *session) SetUserId(ctx context.Context, userId int64) error {
-	return s.queries.UpdateSessionUserId(ctx, database.UpdateSessionUserIdParams{
+	err := s.queries.UpdateSessionUserId(ctx, database.UpdateSessionUserIdParams{
 		UserID:    sql.NullInt64{Int64: userId, Valid: true},
 		SessionID: s.sessionID,
 	})
+	if err == nil {
+		s.userID = userId
+	}
+	return err
 }
 
 func (s *session) Logout(ctx context.Context) {

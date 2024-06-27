@@ -39,7 +39,7 @@ templ Index() {
 }
 
 templ ConfigCard(config config.Config) {
-	<article id={fmt.Sprintf("%s-config", config.Type.String())}>
+	<article id={ fmt.Sprintf("%s-config", config.Type.String()) }>
 		<header>
 			{ config.Type.String() }
 			<input
@@ -53,8 +53,8 @@ templ ConfigCard(config config.Config) {
 				else {
 					hx-put="/htmx/config/enable"
 				}
-				hx-include={fmt.Sprintf("#%s-config [name='type']",config.Type.String())}
-				hx-target={fmt.Sprintf("#%s-config", config.Type.String())}
+				hx-include={ fmt.Sprintf("#%s-config [name='type']",config.Type.String()) }
+				hx-target={ fmt.Sprintf("#%s-config", config.Type.String()) }
 				hx-swap="outerHTML"
 			/>
 		</header>
@@ -85,7 +85,7 @@ templ ConfigCard(config config.Config) {
 				} else {
 					hx-put="/htmx/config"
 				}
-				hx-target={fmt.Sprintf("#%s-config", config.Type.String())}
+				hx-target={ fmt.Sprintf("#%s-config", config.Type.String()) }
 				hx-swap="outerHTML"
 			>{ config.Template }</textarea>
 		</form>
@@ -129,39 +129,39 @@ templ IndexAuthenticated(props IndexAuthenticatedProps) {
 					</div>
 				</div>
 			</article>
-			@loadPage(props.CurrentPage)
+			<section id="content">
+				@loadPage(props.CurrentPage)
+			</section>
 		</main>
 	}
 }
 
 templ ConfigView(configs []config.Config) {
-	<section>
-		@navi("config")
-		<hgroup>
-			<h2>Configuration</h2>
-			<p>
-				Configure the templates that get used when processing you activities
-			</p>
-		</hgroup>
-		for _, config := range configs {
-			@ConfigCard(config)
-		}
-	</section>
+	<title>Stravafy - Config</title>
+	@navi("config")
+	<hgroup>
+		<h2>Configuration</h2>
+		<p>
+			Configure the templates that get used when processing you activities
+		</p>
+	</hgroup>
+	for _, config := range configs {
+		@ConfigCard(config)
+	}
 }
 
 templ PlaylistView() {
-	<section>
-		@navi("playlists")
-		<hgroup>
-			<h2>Playlists</h2>
-			<p>
-				All the playlists you've been listening to recently
-			</p>
-		</hgroup>
-		<div class="auto-grid">
-			<article aria-busy="true" hx-trigger="load" hx-swap="outerHTML" hx-get="/htmx/playlist/cards">Loading...</article>
-		</div>
-	</section>
+	<title>Stravafy - Playlists</title>
+	@navi("playlists")
+	<hgroup>
+		<h2>Playlists</h2>
+		<p>
+			All the playlists you've been listening to recently
+		</p>
+	</hgroup>
+	<div class="auto-grid">
+		<article aria-busy="true" hx-trigger="load" hx-swap="outerHTML" hx-get="/htmx/playlist/cards">Loading...</article>
+	</div>
 }
 
 templ PlaylistCards(playlists []playlist.Playlist) {
@@ -177,7 +177,7 @@ templ PlaylistCardsWithLoadMore(playlists []playlist.Playlist, limit, offset int
 		<article
 			aria-busy="true"
 			hx-swap="outerHTML"
-			hx-get={fmt.Sprintf("/htmx/playlist/cards?limit=%d&offset=%d", limit, offset)}
+			hx-get={ fmt.Sprintf("/htmx/playlist/cards?limit=%d&offset=%d", limit, offset) }
 			hx-trigger="revealed"
 		>
 			Loading ...
@@ -208,17 +208,15 @@ templ playlistCard(playlist playlist.Playlist) {
 }
 
 templ loadPage(page string) {
-	<section>
 		@navi(page)
-		<article aria-busy="true" hx-trigger="load" hx-swap="outerHTML" hx-get={fmt.Sprintf("/htmx/%s/view", page)} hx-target="closest section">Loading...</article>
-	</section>
+		<article aria-busy="true" hx-trigger="load" hx-swap="innerHTML" hx-get={fmt.Sprintf("/htmx/%s/view", page)} hx-target="closest section">Loading...</article>
 }
 
 templ navi(active string) {
 	<div role="group">
 		<button
 			hx-get="/htmx/config/view"
-			hx-swap="outerHTML"
+			hx-swap="innerHTML"
 			hx-target="closest section"
 			hx-push-url="/?page=config"
 			if active != "config" {
@@ -229,7 +227,7 @@ templ navi(active string) {
 		</button>
 		<button
 			hx-get="/htmx/playlist/view"
-			hx-swap="outerHTML"
+			hx-swap="innerHTML"
 			hx-target="closest section"
 			hx-push-url="/?page=playlist"
 			if active != "playlists" {

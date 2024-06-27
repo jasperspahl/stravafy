@@ -1,13 +1,16 @@
 package htmx
 
 import (
+	"fmt"
 	"net/http"
+	"regexp"
 	"stravafy/internal/database"
 	"stravafy/internal/manager/config"
 	"stravafy/internal/manager/playlist"
 	"stravafy/internal/sessions"
 	"stravafy/internal/templates"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -23,12 +26,49 @@ func New(q *database.Queries, configManager *config.Manager, playlistManager pla
 }
 
 func (s *Service) Mount(group *gin.RouterGroup) {
+	group.Use(ensureAuthenticatedMiddleware)
 	group.PUT("config/disable", s.ToggleUserConfig(false))
 	group.PUT("config/enable", s.ToggleUserConfig(true))
 	group.PUT("config", s.EditUserConfig)
 	group.GET("config/view", s.GetUserConfig)
 	group.GET("playlist/view", s.GetPlaylistView)
 	group.GET("playlist/cards", s.GetPlaylistCards)
+}
+
+func ensureAuthenticatedMiddleware(c *gin.Context) {
+	session, err := sessions.GetSession(c)
+	currentPath := c.GetHeader("HX-Current-URL")
+	requestPath := c.Request.URL.Path
+	var viewRequestRegex = regexp.MustCompile(`^/htmx/([a-z].*)/view$`)
+	if viewRequestRegex.MatchString(requestPath) {
+		var host = c.Request.Host
+		method := "https"
+		if parts := strings.Split(host, ":"); len(parts) > 1 {
+			method = "http"
+		}
+		matches := viewRequestRegex.FindStringSubmatch(requestPath)
+		currentPath = fmt.Sprintf("%s://%s/?page=%s", method, host, matches[1])
+	}
+	redirectURL := "/auth/login"
+	if currentPath != "" {
+		redirectURL += "?redirect=" + currentPath
+	}
+	if err != nil {
+		c.Header("HX-Redirect", redirectURL)
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	_, err = session.GetUserId(c)
+	if err == sessions.ErrNotLoggedIn {
+		c.Header("HX-Redirect", redirectURL)
+		c.Status(http.StatusUnauthorized)
+		return
+	}
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	c.Next()
 }
 
 func (s *Service) GetPlaylistCards(c *gin.Context) {
