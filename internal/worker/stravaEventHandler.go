@@ -2,9 +2,11 @@ package worker
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"golang.org/x/oauth2"
-	"stravafy/internal/clients/strava"
 	"stravafy/internal/clients/spotify"
+	"stravafy/internal/clients/strava"
 	"stravafy/internal/database"
 	cfgManager "stravafy/internal/manager/config"
 	"strings"
@@ -19,9 +21,24 @@ const (
 	ObjectTypeAthlete  = "athlete"
 )
 
+var (
+	ErrAlreadyProcessed     = errors.New("already processed")
+	ErrNoProcessingRequired = errors.New("no processing required")
+)
+
 func HandleStravaEvent(event Callback) {
 	wg.Add(1)
 	go handleStravaEvent(event)
+}
+
+func TestStravaActivity(uid, activityId int64) (string, error) {
+	db, err := database.NewSQLite()
+	if err != nil {
+		errorf(uid, "nono database: %v", err)
+		return "", err
+	}
+	q := database.New(db.DB)
+	return processStravaEvent(0, uid, activityId, q, false)
 }
 
 func handleStravaEvent(event Callback) {
@@ -48,15 +65,31 @@ func handleStravaEvent(event Callback) {
 		return
 	}
 	infof(event.EventTime, "\tstrava user: \"%s %s\"", user.FirstName, user.LastName)
-	cm := cfgManager.New(q)
-	playlistConfig := cm.GetUserConfig(user.ID, cfgManager.Playlist)
-	podcastConfig := cm.GetUserConfig(user.ID, cfgManager.Podcast)
-	if !playlistConfig.Enabled && !podcastConfig.Enabled {
-		infof(event.EventTime, "user disabled all processing")
+
+	_, err = processStravaEvent(event.EventTime, user.ID, event.ObjectId, q, true)
+	if errors.Is(err, ErrNoProcessingRequired) || errors.Is(err, ErrAlreadyProcessed) {
+		infof(event.EventTime, "skipping activity %d", event.ObjectId)
+		return
 	}
-	dbToken, err := q.GetTokenByUserId(context.Background(), user.ID)
 	if err != nil {
-		errorf(event.EventTime, "error while fetching accesstoken: %v", err)
+		errorf(event.EventTime, "an error has occurred: %v", err)
+		return
+	}
+	infof(event.EventTime, "\tactivity processing: %d", event.ObjectId)
+}
+
+func processStravaEvent(pid, uid, activityId int64, q *database.Queries, upload bool) (string, error) {
+	cm := cfgManager.New(q)
+	playlistConfig := cm.GetUserConfig(uid, cfgManager.Playlist)
+	podcastConfig := cm.GetUserConfig(uid, cfgManager.Podcast)
+	if !playlistConfig.Enabled && !podcastConfig.Enabled {
+		infof(pid, "user disabled all processing")
+		return "", ErrNoProcessingRequired
+	}
+	dbToken, err := q.GetTokenByUserId(context.Background(), uid)
+	if err != nil {
+		errorf(pid, "error while fetching accesstoken: %v", err)
+		return "", err
 	}
 	token := oauth2.Token{
 		AccessToken:  dbToken.AccessToken,
@@ -65,32 +98,66 @@ func handleStravaEvent(event Callback) {
 	}
 	stravaClient := strava.NewStravaClient(token)
 
-	activity, err := stravaClient.GetActivity(event.ObjectId)
+	activity, err := stravaClient.GetActivity(activityId)
 	if err != nil {
-		errorf(event.EventTime, "error while fetching activity: %v", err)
-		return
+		errorf(pid, "error while fetching activity: %v", err)
+		return "", err
 	}
 
-	if strings.Contains(activity.Description, "stravafy.servebeer.com") {
-		infof(event.EventTime, "already processed")
-		infof(event.EventTime, "exiting...")
-		return
+	if upload && strings.Contains(activity.Description, "stravafy.servebeer.com") {
+		infof(pid, "already processed")
+		infof(pid, "exiting...")
+		return "", ErrAlreadyProcessed
 	}
 	startTime := activity.StartDate
 	endTime := activity.StartDate.Add(time.Duration(activity.ElapsedTime) * time.Second)
 	histEntries, err := q.GetHistoryEntriesBetween(context.Background(), database.GetHistoryEntriesBetweenParams{
-		UserID:      user.ID,
+		UserID:      uid,
 		Timestamp:   startTime.UTC(),
 		Timestamp_2: endTime.UTC(),
 	})
 	if err != nil {
-		errorf(event.EventTime, "an error accourd while fetching history: %v", err)
-		return
+		errorf(pid, "an error accourd while fetching history: %v", err)
+		return "", err
 	}
-	spotifyDbToken, err := q.GetSpotifyAccessToken(context.Background(), user.ID)
+	firstHistoryItem, err := q.GetLastHistoryEntryBefore(context.Background(), database.GetLastHistoryEntryBeforeParams{
+		UserID:    uid,
+		Timestamp: startTime.UTC(),
+	})
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		errorf(pid, "an error accourd while fetching history: %v", err)
+		return "", err
+	} else if errors.Is(err, sql.ErrNoRows) {
+		infof(pid, "no history entries found before activity start")
+	} else if firstHistoryItem.IsPlaying {
+		entry := database.GetHistoryEntriesBetweenRow{
+			ID:                     firstHistoryItem.ID,
+			Timestamp:              firstHistoryItem.Timestamp,
+			IsPlaying:              true,
+			CtxType:                firstHistoryItem.CtxType.String,
+			CtxHref:                firstHistoryItem.CtxHref.String,
+			CtxExternalUrl:         firstHistoryItem.CtxExternalUrl.String,
+			CtxUri:                 firstHistoryItem.CtxUri.String,
+			ItemType:               firstHistoryItem.ItemType.String,
+			ItemHref:               firstHistoryItem.ItemHref.String,
+			ItemExternalUrl:        firstHistoryItem.ItemExternalUrl.String,
+			ItemUri:                firstHistoryItem.ItemUri.String,
+			Name:                   firstHistoryItem.Name.String,
+			Artists:                firstHistoryItem.Artists,
+			Album:                  firstHistoryItem.Album,
+			AlbumUri:               firstHistoryItem.AlbumUri,
+			EpisodeDescription:     firstHistoryItem.EpisodeDescription,
+			EpisodeShowName:        firstHistoryItem.EpisodeShowName,
+			EpisodeShowDescription: firstHistoryItem.EpisodeShowDescription,
+			EpisodeShowUri:         firstHistoryItem.EpisodeShowUri,
+		}
+		histEntries = append([]database.GetHistoryEntriesBetweenRow{entry}, histEntries...)
+	}
+
+	spotifyDbToken, err := q.GetSpotifyAccessToken(context.Background(), uid)
 	if err != nil {
-		errorf(event.EventTime, "error while fetching spotify accesstoken: %v", err)
-		return
+		errorf(pid, "error while fetching spotify accesstoken: %v", err)
+		return "", err
 	}
 	spotifyToken := oauth2.Token{
 		TokenType:    spotifyDbToken.TokenType,
@@ -100,28 +167,31 @@ func handleStravaEvent(event Callback) {
 	}
 	spotifyClient := spotify.NewSpotifyClient(spotifyToken)
 
-	newDescription := generateNewDescription(event.EventTime, histEntries, playlistConfig, podcastConfig, spotifyClient.GetPlaylist)
+	newDescription := generateNewDescription(pid, histEntries, playlistConfig, podcastConfig, spotifyClient.GetPlaylist)
 	if newDescription == "" {
-		infof(event.EventTime, "done")
-		return
+		infof(pid, "done")
+		return "", nil
 	}
 
-	updatedDescription := ""
-	newestActivity, err := stravaClient.GetActivity(event.ObjectId)
-	if err != nil {
-		updatedDescription = activity.Description
-	} else {
-		updatedDescription = newestActivity.Description
-	}
-	updatedDescription += newDescription + "\n-- stravafy.servebeer.com"
+	newDescription += "\n-- stravafy.servebeer.com"
+	if upload {
+		updatedDescription := ""
+		newestActivity, err := stravaClient.GetActivity(activityId)
+		if err != nil {
+			updatedDescription = activity.Description
+		} else {
+			updatedDescription = newestActivity.Description
+		}
+		updatedDescription += newDescription
+		infof(pid, "updating description:\n%s", updatedDescription)
 
-	infof(event.EventTime, "updating description:\n%s", updatedDescription)
-
-	err = stravaClient.UpdateActivityDescription(event.ObjectId, updatedDescription)
-	if err != nil {
-		errorf(event.EventTime, "%v", err)
-		return
+		err = stravaClient.UpdateActivityDescription(pid, updatedDescription)
+		if err != nil {
+			errorf(pid, "%v", err)
+			return "", nil
+		}
 	}
+	return newDescription, nil
 }
 
 func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntriesBetweenRow, playlistConfig, podcastConfig cfgManager.Config, getPlaylist func(string) (*spotify.MinimalPlaylist, error)) string {
@@ -180,4 +250,3 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 	return newDescription
 
 }
-

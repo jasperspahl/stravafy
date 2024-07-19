@@ -1,15 +1,17 @@
 package htmx
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
 	"net/http"
 	"regexp"
-	"database/sql"
 	"stravafy/internal/database"
 	"stravafy/internal/manager/config"
 	"stravafy/internal/manager/playlist"
 	"stravafy/internal/sessions"
 	"stravafy/internal/templates"
+	"stravafy/internal/worker"
 	"strconv"
 	"strings"
 
@@ -17,8 +19,8 @@ import (
 )
 
 type Service struct {
-	q             *database.Queries
-	configManager *config.Manager
+	q               *database.Queries
+	configManager   *config.Manager
 	playlistManager playlist.Manager
 }
 
@@ -36,6 +38,7 @@ func (s *Service) Mount(group *gin.RouterGroup) {
 	group.GET("playlist/cards", s.GetPlaylistCards)
 	group.GET("items/view", s.GetItemsView)
 	group.GET("items", s.GetItems)
+	group.POST("test", s.TestConfig)
 }
 
 func ensureAuthenticatedMiddleware(c *gin.Context) {
@@ -74,11 +77,54 @@ func ensureAuthenticatedMiddleware(c *gin.Context) {
 	c.Next()
 }
 
+type TestPayload struct {
+	ActivityId string `form:"activity"`
+}
+
+func (s *Service) TestConfig(c *gin.Context) {
+	session, err := sessions.GetSession(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	uid, err := session.GetUserId(c)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
+	var payload TestPayload
+	if err := c.Bind(&payload); err != nil {
+		_ = c.Error(err)
+		return
+	}
+	activityID, err := strconv.ParseInt(payload.ActivityId, 10, 64)
+	if err := c.Bind(&payload); err != nil {
+		_ = c.Error(err)
+		return
+	}
+	result, err := worker.TestStravaActivity(uid, activityID)
+	if err != nil {
+		if errors.Is(err, worker.ErrNoProcessingRequired) {
+			c.String(http.StatusOK, "No processing required")
+			return
+		}
+		if errors.Is(err, worker.ErrAlreadyProcessed) {
+			c.String(http.StatusOK, "Already processed")
+			return
+		}
+		c.String(http.StatusOK, "Error processing request")
+		return
+	}
+
+	c.String(http.StatusOK, "<pre><code>"+result+"</code></pre>")
+	return
+}
+
 func (s *Service) GetPlaylistCards(c *gin.Context) {
 	session, err := sessions.GetSession(c)
 	if err != nil {
 		_ = c.Error(err)
-		return 
+		return
 	}
 	uid, err := session.GetUserId(c)
 	if err != nil {
@@ -118,7 +164,7 @@ func (s *Service) GetPlaylistCards(c *gin.Context) {
 		c.String(http.StatusOK, "")
 		return
 	}
-	if len(playlists) < int(limit) - failedToFetch {
+	if len(playlists) < int(limit)-failedToFetch {
 		c.HTML(http.StatusOK, "", templates.PlaylistCards(playlists))
 		return
 	}
@@ -253,7 +299,8 @@ func (s *Service) GetItems(c *gin.Context) {
 		Offset: offset,
 	})
 	result := make([]templates.HistoryItem, 0, len(items))
-	if err == sql.ErrNoRows {} else if err != nil {
+	if err == sql.ErrNoRows {
+	} else if err != nil {
 		_ = c.Error(err)
 		return
 	}

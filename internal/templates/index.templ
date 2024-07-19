@@ -135,16 +135,61 @@ templ IndexAuthenticated(props IndexAuthenticatedProps) {
 		</main>
 	}
 }
-
 templ ConfigView(configs []config.Config) {
 	<title>Stravafy - Config</title>
 	@navi("config")
-	<hgroup>
-		<h2>Configuration</h2>
-		<p>
-			Configure the templates that get used when processing you activities
-		</p>
-	</hgroup>
+	<script src="/static/assets/js/modal.js"></script>
+	<div class="space-between">
+		<hgroup>
+			<h2>Configuration</h2>
+			<p>
+				Configure the templates that get used when processing you activities
+			</p>
+		</hgroup>
+		<button
+			class="contrast"
+			data-target="activity-test-modal"
+			onclick="toggleModal(event)"
+		>
+			Test
+		</button>
+	</div>
+	<dialog id="activity-test-modal">
+		<article>
+			<header>
+				<button
+					aria-label="Close"
+					rel="prev"
+					data-target="activity-test-modal"
+					onclick="toggleModal(event)"
+				></button>
+				<h3>Test Activity</h3>
+			</header>
+			<label for="activity">ActivityID</label>
+			<input id="activity" name="activity" type="number"/>
+			<div id="activity-test-result">
+			</div>
+			<footer>
+				<button
+					role="button"
+					class="secondary"
+					data-target="activity-test-modal"
+					onclick="toggleModal(event)"
+				>
+					Cancel
+				</button>
+				<button
+					hx-post="/htmx/test"
+					hx-target="#activity-test-result"
+					hx-swap="innerHTML"
+					hx-include="#activity"
+				>
+					<span aria-busy="true" class="htmx-indicator"></span>
+					Submit
+				</button>
+			</footer>
+		</article>
+	</dialog>
 	for _, config := range configs {
 		@ConfigCard(config)
 	}
