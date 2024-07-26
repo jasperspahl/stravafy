@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"net/url"
 	"stravafy/internal/config"
+	"strings"
 )
 
 type Client struct {
@@ -46,10 +47,11 @@ func (c *Client) GetActivity(activityID int64) (*DetailedActivity, error) {
 func (c *Client) UpdateActivityDescription(activityID int64, description string) error {
 	values := make(url.Values)
 	values.Add("description", description)
-	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://www.strava.com/api/v3/activities/%d?%s", activityID, values.Encode()), nil)
+	req, err := http.NewRequest(http.MethodPut, fmt.Sprintf("https://www.strava.com/api/v3/activities/%d", activityID), strings.NewReader(values.Encode()))
 	if err != nil {
 		return err
 	}
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r, err := c.httpClient.Do(req)
 	if err != nil {
 		return err
