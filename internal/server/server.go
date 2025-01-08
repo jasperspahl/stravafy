@@ -48,6 +48,7 @@ func Init(queries *database.Queries) {
 	authService.Mount(router.Group("/auth"))
 	webhookService.Mount(router.Group("/callback"))
 	htmxService.Mount(router.Group("/htmx"))
+	router.GET("/build", api.BuildInfo)
 
 	conf := config.GetConfig()
 

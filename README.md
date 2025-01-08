@@ -44,3 +44,16 @@ you whole spotify listening history form this point onward since I have no
 solution yet to disconnect / delete accounts from a user side.
 
 [Hosted instance](https://stravafy.servebeer.com)
+
+## Development
+
+### TODOs
+
+- Spotify refresh token revoked
+  - [ ] Shutdown Spotify Worker
+  - [ ] delete token from db
+  - [ ] display missing spotify connection on webpage
+  - [ ] send email to reconnect spotify
+
+- UI
+  - [ ] Fix Histoy Table on Mobil

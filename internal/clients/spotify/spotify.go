@@ -5,26 +5,29 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 	"stravafy/internal/config"
 
 	"golang.org/x/oauth2"
 )
 
-
 type Client struct {
-	httpClient *http.Client
+	httpClient      *http.Client
+	invalidateToken func()
 }
 
-func NewSpotifyClient(token oauth2.Token) *Client {
+func NewSpotifyClient(token oauth2.Token, invalidateToken func()) *Client {
 	oauth2Config := config.GetSpotifyOauthConfig()
 	return &Client{
-		httpClient: oauth2Config.Client(context.Background(), &token),
+		httpClient:      oauth2Config.Client(context.Background(), &token),
+		invalidateToken: invalidateToken,
 	}
 }
 
 func (c *Client) GetPlaylist(href string) (*MinimalPlaylist, error) {
 	resp, err := c.httpClient.Get(href + "?fields=name,owner(display_name,external_urls.spotify)")
 	if err != nil {
+		c.checkErrorAndInvalidateIfRequired(err)
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -42,6 +45,7 @@ func (c *Client) GetPlaylist(href string) (*MinimalPlaylist, error) {
 func (c *Client) GetPlaylistWithImages(href string) (*PlaylistWithImages, error) {
 	resp, err := c.httpClient.Get(href + "?fields=name,owner(display_name,external_urls.spotify),external_urls.spotify,images")
 	if err != nil {
+		c.checkErrorAndInvalidateIfRequired(err)
 		return nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -59,6 +63,7 @@ func (c *Client) GetPlaylistWithImages(href string) (*PlaylistWithImages, error)
 func (c *Client) GetPlayerState() (int, *PlayerState, *ItemObject, *TrackObject, *EpisodeObject, error) {
 	resp, err := c.httpClient.Get("https://api.spotify.com/v1/me/player?additional_types=track,episode")
 	if err != nil {
+		c.checkErrorAndInvalidateIfRequired(err)
 		return -1, nil, nil, nil, nil, err
 	}
 	if resp.StatusCode != http.StatusOK {
@@ -97,5 +102,15 @@ func (c *Client) GetPlayerState() (int, *PlayerState, *ItemObject, *TrackObject,
 		return resp.StatusCode, &ps, &item, nil, &episode, nil
 	default:
 		return resp.StatusCode, &ps, nil, nil, nil, errors.New("unknown item type")
+	}
+}
+
+func (c *Client) checkErrorAndInvalidateIfRequired(err error) {
+	var outer *url.Error
+	var inner *oauth2.RetrieveError
+	if errors.As(err, &outer) && errors.As(outer.Err, &inner) {
+		if inner.ErrorCode == "invalid_token" {
+			c.invalidateToken()
+		}
 	}
 }
