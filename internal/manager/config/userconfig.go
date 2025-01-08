@@ -64,22 +64,19 @@ var DefaultConfig = map[Type]Config{
 
 type PodcastData struct {
 	Name     string
-	Url      string
 	Show     string
 	ShowDesc string
 }
 
 var PodcastVariables = map[string]string{
-	"Name":    "name of the episode",
-	"Url":     "url of the episode",
-	"Show":    "name of the podcast",
-	"ShowUrl": "url of the podcast",
+	"Name":     "name of the episode",
+	"Show":     "name of the podcast",
+	"ShowDesc": "description of the podcast",
 }
 
 type PlaylistData struct {
 	Name  string
 	Owner string
-	Url   string
 }
 
 var PlaylistVariables = map[string]string{
@@ -91,14 +88,12 @@ var PlaylistVariables = map[string]string{
 var previewData = map[Type]interface{}{
 	Podcast: PodcastData{
 		Name:     "PW No. 60 - Der Mullet muss weg",
-		Url:      "https://open.spotify.com/episode/0rOub7dlXasbeFP0vPFZ7x?si=KwDt_Q13QuK7KcWVJWoLag",
 		Show:     "Plan Z",
 		ShowDesc: "Plan Z und Parallelwelten - der Interview Podcast mit Tanja Erath und Rick Zabel.",
 	},
 	Playlist: PlaylistData{
 		Name:  "Corrupted Blood",
 		Owner: "HandOfBlood",
-		Url:   "https://open.spotify.com/playlist/6WlSmKm4leMtyyhqqaDKAb?si=0bc052c74a694e2a",
 	},
 }
 

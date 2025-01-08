@@ -104,7 +104,7 @@ func processStravaEvent(pid, uid, activityId int64, q *database.Queries, upload 
 		return "", err
 	}
 
-	if upload && strings.Contains(activity.Description, "stravafy.servebeer.com") {
+	if upload && strings.Contains(activity.Description, "Stravafy") {
 		infof(pid, "already processed")
 		infof(pid, "exiting...")
 		return "", ErrAlreadyProcessed
@@ -173,7 +173,7 @@ func processStravaEvent(pid, uid, activityId int64, q *database.Queries, upload 
 		return "", nil
 	}
 
-	newDescription += "\n-- stravafy.servebeer.com"
+	newDescription += "\n-- by Stravafy"
 	if upload {
 		updatedDescription := ""
 		newestActivity, err := stravaClient.GetActivity(activityId)
@@ -210,7 +210,7 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 	}
 	newDescription := ""
 	if len(playlists) > 0 && playlistConfig.Enabled {
-		for href, url := range playlists {
+		for href, _ := range playlists {
 			pl, err := getPlaylist(href)
 			if err != nil {
 				errorf(taskId, "an error acourd while getting context playlist: %v", err)
@@ -219,7 +219,6 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 			data := map[string]string{
 				"Name":  pl.Name,
 				"Owner": pl.Owner.DisplayName,
-				"Url":   url,
 			}
 			desc, err := playlistConfig.Process(data)
 			if err != nil {
@@ -233,10 +232,9 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 	if len(podcastEpisodes) > 0 && podcastConfig.Enabled {
 		for _, index := range podcastEpisodes {
 			data := map[string]string{
-				"Show":    histEntries[index].EpisodeShowName.String,
-				"ShowUrl": histEntries[index].CtxExternalUrl,
-				"Name":    histEntries[index].Name,
-				"Url":     histEntries[index].ItemExternalUrl,
+				"Show":     histEntries[index].EpisodeShowName.String,
+				"ShowDesc": histEntries[index].EpisodeShowDescription.String,
+				"Name":     histEntries[index].Name,
 			}
 			desc, err := podcastConfig.Process(data)
 			if err != nil {
