@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"os"
+	"stravafy/internal/clients/spotify"
 	"stravafy/internal/database"
 	"stravafy/internal/manager/config"
 	"testing"
@@ -14,13 +15,17 @@ func TestGenerateNewDescriptionEmptyDescription(t *testing.T) {
 
 	histEntries := make([]database.GetHistoryEntriesBetweenRow, 0)
 
-	mockedGetPlaylist := func(href string) (*MinimalPlaylist, error) {
-		return &MinimalPlaylist{
+	mockedGetPlaylist := func(href string) (*spotify.MinimalPlaylist, error) {
+		return &spotify.MinimalPlaylist{
 			Name: "Test",
 			Owner: struct {
-				DisplayName string `json:"display_name"`
+				DisplayName  string               `json:"display_name"`
+				ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 			}{
 				DisplayName: "Test",
+				ExternalUrls: spotify.ExternalUrls{
+					Spotify: "",
+				},
 			},
 		}, nil
 	}
@@ -28,12 +33,12 @@ func TestGenerateNewDescriptionEmptyDescription(t *testing.T) {
 	playlistConfig := config.Config{
 		Type:     config.Playlist,
 		Enabled:  true,
-		Template: "{{.Name}} {{.Owner}} {{.Url}}",
+		Template: "{{.Name}} {{.Owner}}",
 	}
 	podcastConfig := config.Config{
 		Type:     config.Podcast,
 		Enabled:  true,
-		Template: "{{.Show}} {{.ShowUrl}} {{.Name}} {{.Url}}",
+		Template: "{{.Show}} {{.Name}}",
 	}
 
 	result := generateNewDescription(0, histEntries, playlistConfig, podcastConfig, mockedGetPlaylist)
@@ -106,17 +111,17 @@ func TestGenerateNewDescriptionOnlyPlaylist(t *testing.T) {
 	playlistConfig := config.Config{
 		Type:     config.Playlist,
 		Enabled:  true,
-		Template: "{{.Name}} {{.Owner}} {{.Url}}",
+		Template: "{{.Name}} {{.Owner}}",
 	}
 	podcastConfig := config.Config{
 		Type:     config.Podcast,
 		Enabled:  false,
-		Template: "{{.Show}} {{.ShowUrl}} {{.Name}} {{.Url}}",
+		Template: "{{.Show}} {{.Name}}",
 	}
 
-	mockedGetPlaylist := func(href string) (*MinimalPlaylist, error) {
+	mockedGetPlaylist := func(href string) (*spotify.MinimalPlaylist, error) {
 		if href == "https://api.spotify.com/v1/playlists/6sp1gCY0lF9G1Wlo983jf0" {
-			return &MinimalPlaylist{
+			return &spotify.MinimalPlaylist{
 				Name: "wenn blätter fallen",
 				Owner: struct {
 					DisplayName string `json:"display_name"`
@@ -125,7 +130,7 @@ func TestGenerateNewDescriptionOnlyPlaylist(t *testing.T) {
 				},
 			}, nil
 		}
-		return &MinimalPlaylist{
+		return &spotify.MinimalPlaylist{
 			Name: "Test",
 			Owner: struct {
 				DisplayName string `json:"display_name"`
@@ -207,17 +212,17 @@ func TestGenerateNewDescriptionOnlyPodcast(t *testing.T) {
 	playlistConfig := config.Config{
 		Type:     config.Playlist,
 		Enabled:  false,
-		Template: "{{.Name}} {{.Owner}} {{.Url}}",
+		Template: "{{.Name}} {{.Owner}}",
 	}
 	podcastConfig := config.Config{
 		Type:     config.Podcast,
 		Enabled:  true,
-		Template: "{{.Show}} {{.ShowUrl}} {{.Name}} {{.Url}}",
+		Template: "{{.Show}} {{.Name}}",
 	}
 
-	mockedGetPlaylist := func(href string) (*MinimalPlaylist, error) {
+	mockedGetPlaylist := func(href string) (*spotify.MinimalPlaylist, error) {
 		if href == "https://api.spotify.com/v1/playlists/6sp1gCY0lF9G1Wlo983jf0" {
-			return &MinimalPlaylist{
+			return &spotify.MinimalPlaylist{
 				Name: "wenn blätter fallen",
 				Owner: struct {
 					DisplayName string `json:"display_name"`
@@ -226,7 +231,7 @@ func TestGenerateNewDescriptionOnlyPodcast(t *testing.T) {
 				},
 			}, nil
 		}
-		return &MinimalPlaylist{
+		return &spotify.MinimalPlaylist{
 			Name: "Test",
 			Owner: struct {
 				DisplayName string `json:"display_name"`
@@ -238,7 +243,7 @@ func TestGenerateNewDescriptionOnlyPodcast(t *testing.T) {
 
 	result := generateNewDescription(0, histEntries, playlistConfig, podcastConfig, mockedGetPlaylist)
 
-	expected := "\nPlan Z https://open.spotify.com/show/5vQTGlmbla4NhLUrdmIRph PW No. 64 - Lotterleben https://open.spotify.com/episode/3D1KaJ4nNDzOol0ek6kaV2"
+	expected := "\nPlan Z PW No. 64 - Lotterleben "
 
 	if result != expected {
 		t.Fatalf("%s != %s", result, expected)
