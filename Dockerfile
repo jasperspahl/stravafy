@@ -1,5 +1,5 @@
 FROM golang:1.22-bookworm as build
-RUN go install github.com/a-h/templ/cmd/templ@latest
+RUN go install github.com/a-h/templ/cmd/templ@v0.2.778
 RUN go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest
 RUN apt update && apt install -y ca-certificates
 WORKDIR /app
