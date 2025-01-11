@@ -45,9 +45,9 @@ func ensureAuthenticatedMiddleware(c *gin.Context) {
 	session, err := sessions.GetSession(c)
 	currentPath := c.GetHeader("HX-Current-URL")
 	requestPath := c.Request.URL.Path
-	var viewRequestRegex = regexp.MustCompile(`^/htmx/([a-z].*)/view$`)
+	viewRequestRegex := regexp.MustCompile(`^/htmx/([a-z].*)/view$`)
 	if viewRequestRegex.MatchString(requestPath) {
-		var host = c.Request.Host
+		host := c.Request.Host
 		method := "https"
 		if parts := strings.Split(host, ":"); len(parts) > 1 {
 			method = "http"
@@ -98,6 +98,10 @@ func (s *Service) TestConfig(c *gin.Context) {
 		return
 	}
 	activityID, err := strconv.ParseInt(payload.ActivityId, 10, 64)
+	if err != nil {
+		_ = c.Error(err)
+		return
+	}
 	if err := c.Bind(&payload); err != nil {
 		_ = c.Error(err)
 		return
@@ -117,7 +121,6 @@ func (s *Service) TestConfig(c *gin.Context) {
 	}
 
 	c.String(http.StatusOK, "<pre><code>"+result+"</code></pre>")
-	return
 }
 
 func (s *Service) GetPlaylistCards(c *gin.Context) {
@@ -169,7 +172,6 @@ func (s *Service) GetPlaylistCards(c *gin.Context) {
 		return
 	}
 	c.HTML(http.StatusOK, "", templates.PlaylistCardsWithLoadMore(playlists, limit, offset+limit))
-
 }
 
 func (s *Service) GetPlaylistView(c *gin.Context) {

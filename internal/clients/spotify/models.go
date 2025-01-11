@@ -7,21 +7,21 @@ import (
 type MinimalPlaylist struct {
 	Name  string `json:"name"`
 	Owner struct {
-		DisplayName string `json:"display_name"`
+		DisplayName  string       `json:"display_name"`
 		ExternalUrls ExternalUrls `json:"external_urls"`
 	} `json:"owner"`
 }
 
 type Image struct {
 	Url    string `json:"url"`
-	Height *int `json:"height"`
-	Width  *int `json:"width"`
+	Height *int   `json:"height"`
+	Width  *int   `json:"width"`
 }
 
 type PlaylistWithImages struct {
 	MinimalPlaylist
 	ExternalUrls ExternalUrls `json:"external_urls"`
-	Images []Image `json:"images"`
+	Images       []Image      `json:"images"`
 }
 
 type ExternalUrls struct {

@@ -5,16 +5,17 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"golang.org/x/oauth2"
 	"log"
 	"net/http"
 	"os"
+	"stravafy/internal/clients/spotify"
 	"stravafy/internal/config"
 	"stravafy/internal/database"
-	"stravafy/internal/clients/spotify"
 	"strings"
 	"sync"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 var (
@@ -47,7 +48,6 @@ func Start() {
 	for _, id := range userIds {
 		go worker(id, shutdownCh, &wg)
 	}
-
 }
 
 func LaunchSyncForUser(userID int64) {
@@ -73,7 +73,9 @@ func worker(id int64, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 		Expiry:       time.Unix(dbToken.ExpiresAt, 0),
 	}
 
-	client := spotify.NewSpotifyClient(token)
+	client := spotify.NewSpotifyClient(token, func() {
+		// TODO: implement cleanup function
+	})
 
 	conf := config.GetConfig()
 	ticker := time.Tick(time.Duration(conf.Spotify.UpdateInterval) * time.Second)
@@ -102,7 +104,6 @@ func worker(id int64, shutdown <-chan struct{}, wg *sync.WaitGroup) {
 			return
 		}
 	}
-
 }
 
 func handlePlaying(id int64, q *database.Queries, playerState *spotify.PlayerState, item *spotify.ItemObject, track *spotify.TrackObject, episode *spotify.EpisodeObject) error {
@@ -225,6 +226,7 @@ func Shutdown() {
 func infof(id int64, format string, v ...any) {
 	logger.Printf("worker %d [INFO]: %s", id, fmt.Sprintf(format, v...))
 }
+
 func errorf(id int64, format string, v ...any) {
 	logger.Printf("worker %d [ERROR]: %s", id, fmt.Sprintf(format, v...))
 }

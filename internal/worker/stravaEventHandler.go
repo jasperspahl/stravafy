@@ -4,13 +4,14 @@ import (
 	"context"
 	"database/sql"
 	"errors"
-	"golang.org/x/oauth2"
 	"stravafy/internal/clients/spotify"
 	"stravafy/internal/clients/strava"
 	"stravafy/internal/database"
 	cfgManager "stravafy/internal/manager/config"
 	"strings"
 	"time"
+
+	"golang.org/x/oauth2"
 )
 
 const (
@@ -165,7 +166,9 @@ func processStravaEvent(pid, uid, activityId int64, q *database.Queries, upload 
 		RefreshToken: spotifyDbToken.RefreshToken,
 		Expiry:       time.Unix(spotifyDbToken.ExpiresAt, 0),
 	}
-	spotifyClient := spotify.NewSpotifyClient(spotifyToken)
+	spotifyClient := spotify.NewSpotifyClient(spotifyToken, func() {
+		// TODO: Create cleanup function
+	})
 
 	newDescription := generateNewDescription(pid, histEntries, playlistConfig, podcastConfig, spotifyClient.GetPlaylist)
 	if newDescription == "" {
@@ -195,7 +198,6 @@ func processStravaEvent(pid, uid, activityId int64, q *database.Queries, upload 
 }
 
 func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntriesBetweenRow, playlistConfig, podcastConfig cfgManager.Config, getPlaylist func(string) (*spotify.MinimalPlaylist, error)) string {
-
 	playlists := make(map[string]string)
 	podcastEpisodes := make([]int, 0)
 
@@ -210,7 +212,7 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 	}
 	newDescription := ""
 	if len(playlists) > 0 && playlistConfig.Enabled {
-		for href, _ := range playlists {
+		for href := range playlists {
 			pl, err := getPlaylist(href)
 			if err != nil {
 				errorf(taskId, "an error acourd while getting context playlist: %v", err)
@@ -246,5 +248,4 @@ func generateNewDescription(taskId int64, histEntries []database.GetHistoryEntri
 	}
 
 	return newDescription
-
 }

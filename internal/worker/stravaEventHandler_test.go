@@ -124,7 +124,8 @@ func TestGenerateNewDescriptionOnlyPlaylist(t *testing.T) {
 			return &spotify.MinimalPlaylist{
 				Name: "wenn blätter fallen",
 				Owner: struct {
-					DisplayName string `json:"display_name"`
+					DisplayName  string               `json:"display_name"`
+					ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 				}{
 					DisplayName: "julie",
 				},
@@ -133,7 +134,8 @@ func TestGenerateNewDescriptionOnlyPlaylist(t *testing.T) {
 		return &spotify.MinimalPlaylist{
 			Name: "Test",
 			Owner: struct {
-				DisplayName string `json:"display_name"`
+				DisplayName  string               `json:"display_name"`
+				ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 			}{
 				DisplayName: "Test",
 			},
@@ -225,7 +227,8 @@ func TestGenerateNewDescriptionOnlyPodcast(t *testing.T) {
 			return &spotify.MinimalPlaylist{
 				Name: "wenn blätter fallen",
 				Owner: struct {
-					DisplayName string `json:"display_name"`
+					DisplayName  string               `json:"display_name"`
+					ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 				}{
 					DisplayName: "julie",
 				},
@@ -234,7 +237,8 @@ func TestGenerateNewDescriptionOnlyPodcast(t *testing.T) {
 		return &spotify.MinimalPlaylist{
 			Name: "Test",
 			Owner: struct {
-				DisplayName string `json:"display_name"`
+				DisplayName  string               `json:"display_name"`
+				ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 			}{
 				DisplayName: "Test",
 			},
@@ -243,7 +247,7 @@ func TestGenerateNewDescriptionOnlyPodcast(t *testing.T) {
 
 	result := generateNewDescription(0, histEntries, playlistConfig, podcastConfig, mockedGetPlaylist)
 
-	expected := "\nPlan Z PW No. 64 - Lotterleben "
+	expected := "\nPlan Z PW No. 64 - Lotterleben"
 
 	if result != expected {
 		t.Fatalf("%s != %s", result, expected)
@@ -313,29 +317,31 @@ func TestGenerateNewDescription(t *testing.T) {
 	playlistConfig := config.Config{
 		Type:     config.Playlist,
 		Enabled:  true,
-		Template: "{{.Name}} {{.Owner}} {{.Url}}",
+		Template: "{{.Name}} {{.Owner}}",
 	}
 	podcastConfig := config.Config{
 		Type:     config.Podcast,
 		Enabled:  true,
-		Template: "{{.Show}} {{.ShowUrl}} {{.Name}} {{.Url}}",
+		Template: "{{.Show}} {{.Name}}",
 	}
 
-	mockedGetPlaylist := func(href string) (*MinimalPlaylist, error) {
+	mockedGetPlaylist := func(href string) (*spotify.MinimalPlaylist, error) {
 		if href == "https://api.spotify.com/v1/playlists/6sp1gCY0lF9G1Wlo983jf0" {
-			return &MinimalPlaylist{
+			return &spotify.MinimalPlaylist{
 				Name: "wenn blätter fallen",
 				Owner: struct {
-					DisplayName string `json:"display_name"`
+					DisplayName  string               `json:"display_name"`
+					ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 				}{
 					DisplayName: "julie",
 				},
 			}, nil
 		}
-		return &MinimalPlaylist{
+		return &spotify.MinimalPlaylist{
 			Name: "Test",
 			Owner: struct {
-				DisplayName string `json:"display_name"`
+				DisplayName  string               `json:"display_name"`
+				ExternalUrls spotify.ExternalUrls `json:"external_urls"`
 			}{
 				DisplayName: "Test",
 			},
@@ -344,7 +350,7 @@ func TestGenerateNewDescription(t *testing.T) {
 
 	result := generateNewDescription(0, histEntries, playlistConfig, podcastConfig, mockedGetPlaylist)
 
-	expected := "\nwenn blätter fallen julie https://open.spotify.com/playlist/6sp1gCY0lF9G1Wlo983jf0\nPlan Z https://open.spotify.com/show/5vQTGlmbla4NhLUrdmIRph PW No. 64 - Lotterleben https://open.spotify.com/episode/3D1KaJ4nNDzOol0ek6kaV2"
+	expected := "\nwenn blätter fallen julie\nPlan Z PW No. 64 - Lotterleben"
 
 	if result != expected {
 		t.Fatalf("%s != %s", result, expected)

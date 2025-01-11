@@ -12,16 +12,16 @@ import (
 )
 
 type Manager interface {
-	GetUserPlaylists(userID int64, limit, offset int64) ([]Playlist, error) 
+	GetUserPlaylists(userID int64, limit, offset int64) ([]Playlist, error)
 }
 
 type Playlist struct {
-	Name string
+	Name  string
 	Owner struct {
 		Name string
-		Url string
+		Url  string
 	}
-	Url string
+	Url   string
 	Image string
 }
 
@@ -32,7 +32,7 @@ func (e *ErrPlaylistFailedToFetch) Error() string {
 }
 
 type manager struct {
-	q *database.Queries
+	q     *database.Queries
 	cache map[string]cachedPlaylist
 }
 
@@ -45,11 +45,10 @@ func New(q *database.Queries) Manager {
 	return &manager{q: q, cache: make(map[string]cachedPlaylist)}
 }
 
-
 func (m *manager) GetUserPlaylists(userID int64, limit, offset int64) ([]Playlist, error) {
 	playlists, err := m.q.GetUserPlaylists(context.Background(), database.GetUserPlaylistsParams{
 		UserID: userID,
-		Limit: limit,
+		Limit:  limit,
 		Offset: offset,
 	})
 	if err != nil {
@@ -69,7 +68,9 @@ func (m *manager) GetUserPlaylists(userID int64, limit, offset int64) ([]Playlis
 		RefreshToken: dbToken.RefreshToken,
 		Expiry:       time.Unix(dbToken.ExpiresAt, 0),
 	}
-	spotifyClient := spotify.NewSpotifyClient(token)
+	spotifyClient := spotify.NewSpotifyClient(token, func() {
+		// TODO: Implement cleanup
+	})
 	var result []Playlist
 	var failedToFetch ErrPlaylistFailedToFetch = 0
 	for _, p := range playlists {
@@ -104,13 +105,13 @@ func (m *manager) GetUserPlaylists(userID int64, limit, offset int64) ([]Playlis
 			Name: pl.Name,
 			Owner: struct {
 				Name string
-				Url string
+				Url  string
 			}{Name: pl.Owner.DisplayName, Url: pl.Owner.ExternalUrls.Spotify},
-			Url: pl.ExternalUrls.Spotify,
+			Url:   pl.ExternalUrls.Spotify,
 			Image: image,
 		}
 		m.cache[p.Href] = cachedPlaylist{
-			Playlist: playlist,
+			Playlist:  playlist,
 			ExpiresAt: time.Now().Add(6 * time.Hour),
 		}
 		result = append(result, playlist)
@@ -120,4 +121,3 @@ func (m *manager) GetUserPlaylists(userID int64, limit, offset int64) ([]Playlis
 	}
 	return result, nil
 }
-
